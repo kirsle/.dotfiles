@@ -1,0 +1,23 @@
+#!/usr/bin/perl
+
+# json-pretty: Take a JSON file and pretty-print it.
+#
+# Usage: json-pretty <file.json>
+#
+# --Kirsle
+
+use strict;
+use warnings;
+use JSON;
+
+my $file = shift(@ARGV) or die "Usage: $0 <file.json>\n";
+
+my $json = JSON->new->utf8->pretty();
+
+local $/ = undef;
+open(my $fh, "<", $file);
+my $text = <$fh>;
+close($fh);
+
+my $data = $json->decode($text);
+print $json->encode($data);

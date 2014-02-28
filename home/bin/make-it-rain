@@ -1,0 +1,44 @@
+#!/usr/bin/perl
+
+# make-it-rain: Command the Minecraft weather!
+#
+# Usage: make-it-rain <screen name> <clear|rain|thunder> [duration]
+#    Ex: make-it-rain minecraft thunder 300
+#
+# You have to run your Minecraft server in a `screen` session, preferably with
+# a friendly session name, like so:
+#
+#     $ screen -S minecraft
+#
+# Then, use that session name with this script. See the example usage.
+#
+# This script will basically execute the /weather command in your Minecraft
+# server, for example "weather thunder 300" for a 5 minute long thunder storm.
+# See the Minecraft documentation for more info. Notably, the maximum duration
+# value that Minecraft accepts is 1000000 (1 million), which comes out to be
+# about 277 hours.
+#
+# You can set up a cron job to keep your server constantly stormy by doing
+# something like this:
+#
+#     * 0 * * * make-it-rain minecraft thunder 86400
+#
+# This would kick off a 24 hour long thunder storm every night at midnight.
+#
+# --Kirsle
+# http://sh.kirsle.net/
+
+use strict;
+use warnings;
+
+my ($screen, $mode, $time) = @ARGV;
+unless ($screen) {
+	die "Usage: $0 <screen name> <clear|rain|thunder> [time]\n";
+}
+
+my $command = qq{screen -x $screen -X stuff 'weather $mode};
+if ($time) {
+	$command .= qq{ $time};
+}
+$command .= qq{\x0D'};
+exec($command);

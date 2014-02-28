@@ -1,0 +1,43 @@
+#!/usr/bin/perl
+
+use 5.10.0;
+use strict;
+use warnings;
+
+# onetime - Only run a command if it's not already running.
+#
+# Usage: onetime <command>
+#    Ex: onetime xchat
+#
+# --Kirsle
+# http://sh.kirsle.net
+
+if (scalar(@ARGV) == 0 || (scalar(@ARGV) && $ARGV[0] =~ /^-+h/)) {
+	say "Usage: onetime <command>";
+	say "   Ex: onetime xchat";
+	exit(1);
+}
+
+my ($cmd,@args) = @ARGV;
+if ($cmd =~ /[^A-Za-z0-9-_]/) {
+	die "That command looks funny :\\ '$cmd'";
+}
+
+# See if it's already running.
+my @ps = `ps aux | grep $cmd`;
+my $found = 0;
+foreach my $line (@ps) {
+	my ($user, $pid, @extra) = split(/\s+/, $line, 11);
+	my $cmdline = pop(@extra);
+	next if $cmdline =~ /grep/;
+	next if $cmdline =~ /\Q$0\E/;
+	$found = $pid;
+	last;
+}
+
+if ($found) {
+	say "'$cmd' appears to already be running as PID $found.";
+	exit(1);
+}
+
+exec($cmd, @args);

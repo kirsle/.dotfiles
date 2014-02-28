@@ -1,0 +1,9 @@
+#!/usr/bin/perl -w
+
+# v4lskype - A simple front-end for Skype for Linux that loads the Video 4 Linux
+# driver before launching Skype.
+#
+# If your Skype has problems with video, change the launcher to launch this
+# script instead.
+
+exec("LD_PRELOAD=/usr/lib/libv4l/v4l1compat.so skype");

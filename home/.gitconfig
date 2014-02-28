@@ -1,0 +1,22 @@
+[user]
+	name = Noah Petherbridge
+	email = root@kirsle.net
+
+[alias]
+	ci = commit
+	co = checkout
+	br = branch
+	st = status
+
+[core]
+	editor = vim
+
+[color]
+	ui = true
+	diff = true
+	pager = true
+	status = auto
+	branch = auto
+
+[push]
+	default = simple

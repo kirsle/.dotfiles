@@ -1,0 +1,49 @@
+#!/usr/bin/perl -w
+
+# chmodweb - Like chmodfix except regular files are chmodded 0666 instead of
+# 0644. See chmodfix.
+#
+# --Kirsle
+# http://sh.kirsle.net/
+
+if (scalar(@ARGV)) {
+	foreach my $dir (@ARGV) {
+		if (-d $dir) {
+			print "#####################\n";
+			print "Fix: $dir\n";
+			print "#####################\n";
+			&scanDir($dir);
+		}
+	}
+}
+else {
+	print "Usage: chmodfix <directories>\n";
+	exit(0);
+}
+
+sub scanDir {
+	my $dir = shift;
+
+	opendir (DIR, $dir);
+	foreach my $file (readdir(DIR)) {
+		next if $file eq ".";
+		next if $file eq "..";
+
+		if (-d "$dir/$file") {
+			print "chmod directory: 0755 ($dir/$file)\n";
+			chmod (0755, "$dir/$file");
+			&scanDir ("$dir/$file");
+		}
+		else {
+			if ($file =~ /\.(cgi|pl|php)$/i) {
+				print "chmod CGI file: 0755 ($dir/$file)\n";
+				chmod (0755, "$dir/$file");
+			}
+			else {
+				print "chmod file: 0666 ($dir/$file)\n";
+				chmod (0666, "$dir/$file");
+			}
+		}
+	}
+	closedir (DIR);
+}

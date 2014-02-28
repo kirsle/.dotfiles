@@ -1,0 +1,289 @@
+#!/usr/bin/perl -w
+
+# rre - A rename command that supports regular expressions.
+#
+# See `rre -?` for help.
+#
+# --Kirsle
+# http://sh.kirsle.net/
+
+use strict;
+use warnings;
+use Getopt::Long;
+Getopt::Long::Configure ("bundling");
+
+our $VERSION = '0.01';
+my $help = 0;     # using --help flag
+my $recurse = 0;  # using -R flag
+my $verbose = 0;  # using -v flag
+my $force   = 0;  # using -f flag
+my $replace = ''; # using -r flag
+my $input   = ''; # input RE
+my $output  = ''; # output RE
+my $limit   = 250; # renaming limit for uniqueness
+
+# Get the options.
+my $getopts = GetOptions (
+	'help|h|?'            => \$help,
+	'R|recursive|recurse' => \$recurse,
+	'v|verbose'           => \$verbose,
+	'l|limit'             => \$limit,
+	'f|force'             => \$force,
+	'r|replace'           => \$replace,
+	'i|input=s'           => \$input,
+	'o|output=s'          => \$output,
+);
+
+if ($help) {
+	&help();
+}
+if (length $input == 0 || length $output == 0) {
+	&usage();
+}
+
+&process();
+
+################################################################################
+## Process the Program                                                        ##
+################################################################################
+
+sub process {
+	# Scan the directory.
+	&scanDir (".");
+}
+
+sub scanDir {
+	my $dir = shift;
+
+	print "Descending into $dir\n" if $verbose;
+
+	opendir (DIR, $dir);
+	foreach my $file (sort(readdir(DIR))) {
+		next if $file eq '.';
+		next if $file eq '..';
+
+		# Is this file a directory?
+		if (-d "$dir/$file") {
+			# Are we recursing?
+			if ($recurse) {
+				&scanDir ("$dir/$file");
+			}
+		}
+
+		# Only deal with real files.
+		if (-f "$dir/$file") {
+			# Doing a string replace?
+			if ($replace) {
+				if ($file =~ /$input/i) {
+					my $newName = $file;
+					$newName =~ s/$input/$output/g;
+					my $confirm = 0;
+					if (not $force) {
+						print "Rename \"$dir/$file\" to \"$newName\"? [yN] ";
+						chomp (my $reply = <STDIN>);
+
+						if (lc($reply) eq "yes" || lc($reply) eq "y") {
+							$confirm = 1;
+						}
+						else {
+							next;
+						}
+					}
+					else {
+						$confirm = 1;
+					}
+
+					if ($confirm) {
+						if (rename("$dir/$file", "$dir/$newName")) {
+							print "$file => $newName\n" if $verbose;
+						}
+						else {
+							print "Failed to rename $file: $!";
+						}
+					}
+				}
+				next;
+			}
+
+			# See if this file matches our regular expression.
+			if ($file =~ /^$input$/i) {
+				# Are we allowed to modify this file?
+				if (-r "$dir/$file") {
+					# Attempt to rename it.
+					my @matches = ($file =~ /^$input$/i);
+					unshift (@matches,'');
+
+					my $newName = $output;
+					$newName =~ s/%(\d+?)/$matches[$1]/ig;
+
+					# Does our new name already exist?
+					if (-e "$dir/$newName") {
+						print "Warning: new filename exists for $newName\n";
+
+						# Find a unique name.
+						my $check = $newName;
+						my $i = 0;
+						while (-e "$dir/$check") {
+							$i++;
+							$check = "[$i] $newName";
+							if ($i > $limit) {
+								print "Error: failed to find a unique name for $newName\n";
+							}
+						}
+						$newName = $check;
+					}
+
+					# Get confirmation to rename the file.
+					my $confirm = 0;
+					if (not $force) {
+						print "Rename \"$dir/$file\" to \"$newName\"? [yN] ";
+						chomp (my $reply = <STDIN>);
+
+						if (lc($reply) eq "yes" || lc($reply) eq "y") {
+							# Okay.
+							$confirm = 1;
+						}
+						else {
+							# Skip this file.
+							next;
+						}
+					}
+					else {
+						$confirm = 1; # we used --force
+					}
+
+					# Attempt to rename the file.
+					if (rename("$dir/$file","$dir/$newName")) {
+						print "$file => $newName\n" if $verbose;
+					}
+					else {
+						print "Can't rename $file: $!\n";
+					}
+				}
+				else {
+					print "Can't rename $file: permission denied.\n";
+				}
+			}
+		}
+	}
+	closedir (DIR);
+}
+
+################################################################################
+## Print the Usage Information                                                ##
+################################################################################
+
+sub usage {
+	print "USAGE:\n"
+		. "\trre [-Rvf] -i expression -o expression\n"
+		. "See `rre --help` for full documentation.\n";
+	exit(0);
+}
+
+################################################################################
+## Print the Full Documentation                                               ##
+################################################################################
+
+sub help {
+	print qq~
+NAME
+
+	rre - A rename command that supports regular expressions.
+
+SYNOPSIS
+
+	rre [-Rrvf] [-l limit] -i inputexpr -o outputexr
+
+DESCRIPTION
+
+	rre is a tool for renaming multiple files that match a given
+	regular expression and naming the new files according to a
+	defined pattern.
+
+OPTIONS
+
+	--help
+	-h
+	-?
+
+		Prints this documentation.
+
+	--verbose
+	-v
+
+		Print verbose information about everything the program does.
+
+	--force
+	-f
+
+		Automatically rename files without prompting.
+
+	--recursive
+	--recurse
+	-R
+
+		Recurse into subdirectories.
+
+	--replace
+	-r
+
+		Do a find-and-replace instead of a regexp rename. Example:
+		\$ rre -r -i "_" -o " "
+		... to replace underscores with spaces.
+
+	--limit
+	-l
+
+		When trying to rename to a file that exists, numbers are
+		prepended until the name is unique. When "limit" is reached,
+		the program will quit trying and move on to the next file.
+		Default is 250.
+
+	--input
+	-i
+
+		The input regular expression to match on the files in the
+		directories scanned.
+
+	--output
+	-o
+
+		The output expression for what to name files into. Use of
+		variables \%1, \%2, \%3, etc. can be used here (and probably
+		should be). If the new file name already exists, a number will
+		be appended to it.
+
+BEHAVIOR
+
+	If the target file name already exists, a number will be prepended to
+	the name until the file name becomes unique, or the number exceeds
+	the --limit, which defaults to 250. The file format of a renamed file
+	is "[x] filename", where x is the number which increments from 1 to
+	--limit.
+
+	When --force is not enabled, you will be prompted before any file
+	renaming operations are completed. An answer of "y" or "yes" is required
+	to continue; any other value (or no value) will skip the current file.
+
+EXAMPLES
+
+	If you had a directory full of episodes for a particular TV show,
+	and they were all formatted with the episode numbers listed by season
+	and then number, such as "1x01", "1x02", "1x03", then "2x01", "2x02",
+	etc., and you wanted the numbers to simply be 101, 102, 103, 201, 202:
+
+		rre -i "(.+?)(\\d)x(\\d\\d)(.+?)\.avi" -o "\%1\%2\%3\%4\.avi"
+
+	If you had a directory full of MP3 files, and many of them followed
+	the format of "Artist - Album - Song Name.mp3", and you wanted to omit
+	the album name:
+
+		rre -i "(.+?) - (.+?) - (.+?)\.mp3" -o "\%1 - \%3.mp3"
+
+AUTHOR AND VERSION
+
+	Casey Kirsle <casey at cuvou.net>
+	rre version $VERSION
+~;
+	exit(0);
+}

@@ -1,0 +1,54 @@
+#!/usr/bin/perl -w
+
+# id3set - Stupid simple way to set IDv3 tags on an MP3.
+#
+# Usage: id3set "Band Name - Song" song.mp3
+#
+# This script just sets artist and song title info. It's useful for MP3s that
+# completely lack this information.
+#
+# --Kirsle
+# http://sh.kirsle.net/
+
+use strict;
+use warnings;
+use MP3::Info;
+
+if (scalar(@ARGV) == 0 || scalar(@ARGV) > 2) {
+	die "Usage: $0 <Band Name - Title> file.mp3";
+}
+
+my $info;
+my $file;
+if (scalar(@ARGV) == 1) {
+	# Only a file given.
+	if ($ARGV[0] =~ /^(.+? - .+?)\.mp3$/i) {
+		# Good enough!
+		$info = $1;
+		$file = shift;
+	}
+}
+else {
+	$info = shift;
+	$file = shift;
+}
+
+if (!-f $file) {
+	die "$file: file not found.";
+}
+
+my ($band, $song) = $info =~ /^(.+?) - (.+?)$/;
+$band = trim($band);
+$song = trim($song);
+
+print "Artist: $band\n";
+print " Title: $song\n";
+
+MP3::Info::set_mp3tag($file, $song, $band);
+
+sub trim {
+	$_ = shift;
+	s/^\s+//g;
+	s/\s+$//g;
+	return $_;
+}

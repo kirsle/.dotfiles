@@ -1,0 +1,33 @@
+#!/usr/bin/perl -w
+
+# metacity-test - A simple script to test Metacity themes by popping up a simple
+# window just to show off the window decorations.
+#
+# Requires Perl/Tk.
+#
+# --Kirsle
+# http://sh.kirsle.net/
+
+use strict;
+use warnings;
+use Tk;
+
+my $str = join (" ",@ARGV) || 'Preview';
+
+my $mw = MainWindow->new (
+	-title => "Cuvou.com",
+);
+$mw->optionAdd ('*highlightThickness',0);
+
+$mw->Label (
+	-width => 25,
+	-textvariable => \$str,
+	-relief => 'flat',
+	-font   => [
+		-weight => 'bold',
+		-size   => 12,
+		-family => 'Arial',
+	],
+)->pack (-padx => 5, -pady => 5);
+
+MainLoop;

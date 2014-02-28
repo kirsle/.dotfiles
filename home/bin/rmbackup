@@ -1,0 +1,35 @@
+#!/usr/bin/perl -w
+
+# rmbackup - Recursively scans a directory and removes backup files left behind
+# by gedit and emacs.
+#
+# Usage: rmbackup [directory]
+#
+# Deletes file names that end with the tilde character: ~
+#
+# --Kirsle
+# http://sh.kirsle.net/
+
+my $dir = shift(@ARGV) || ".";
+
+&scanDir($dir);
+sub scanDir {
+	my $d = shift;
+
+	print "scan> $d\n";
+
+	opendir (DIR, $d);
+	foreach my $file (readdir(DIR)) {
+		next if $file eq ".";
+		next if $file eq "..";
+		if (-d "$d/$file") {
+			&scanDir("$d/$file");
+		}
+		else {
+			if ($file =~ /\~$/) {
+				print " del> $d/$file\n";
+				unlink("$d/$file");
+			}
+		}
+	}
+}

@@ -1,0 +1,375 @@
+#!/usr/bin/perl -w
+
+# datename - Automatically rename a large group of files to have dates in their
+# names.
+#
+# This script is for renaming many files (e.g. files downloaded from a digital
+# camera) to have dates as their file names, e.g. from 2009-12-25_001.jpg to
+# 2009-12-25_058.jpg
+#
+# Usage: datename [options] <files>
+# See `datename -?` for more help.
+#
+# --Kirsle
+# http://sh.kirsle.net/
+
+use strict;
+use warnings;
+use Getopt::Long;
+use File::Copy;
+our $version = "1.0  Feb 23 2009";
+
+unless (@ARGV) {
+	print "Usage: datename [options] [files]\n"
+		. "Try `datename -?` for help.\n";
+	exit(1);
+}
+
+our %c = (
+	r => "\e[31m",
+	g => "\e[32m",
+	c => "\e[34m",
+	o => "\e[0m",
+);
+
+##############################
+# Collect Options            #
+##############################
+
+my @lt = localtime(time());
+my $today = join("-",
+	sprintf("%04d", ($lt[5] + 1900)),
+	sprintf("%02d", ($lt[4] + 1)),
+	sprintf("%02d", ($lt[3])),
+);
+my $o = {
+	help   => 0,
+	format => undef,
+	date   => undef,
+	start  => 1,
+	force  => 0,
+	backup => "./datename-backup",
+	nobackup => 0,
+	mono     => 0,
+};
+GetOptions (
+	'help|h|?'   => \$o->{help},
+	'format|f=s' => \$o->{format},
+	'date|d=s'   => \$o->{date},
+	'start|s=i'  => \$o->{start},
+	'backup|b=s' => \$o->{backup},
+	'nobackup'   => \$o->{nobackup},
+	'force'      => \$o->{force},
+	'monotone|mono|m' => \$o->{mono},
+);
+if ($o->{help}) {
+	&help();
+}
+if ($o->{mono}) {
+	foreach my $key (keys %c) {
+		$c{$key} = '';
+	}
+}
+
+##############################
+# Ask for Parameters         #
+##############################
+$| = 1;
+print "$c{r}DateName$c{o} version $c{g}$version$c{o}\n\n";
+
+unless ($o->{nobackup}) {
+	print "Initializing backup directory... ";
+	if (!-d $o->{backup}) {
+		system("mkdir", "-p", $o->{backup});
+		if (!-d $o->{backup}) {
+			die "Can't create backup directory: $!";
+		}
+	}
+	print "Done!\n\n";
+}
+
+if (!defined $o->{format}) {
+	print "$c{c}1: Enter the format for the file names to follow. This should\n"
+	    . "   contain the sequences `yyyy`, `mm`, `dd`, and at least one\n"
+	    . "   `n`. For example if the format is `yyyy-mm-dd_nnn`, the\n"
+	    . "   and the date is 2009-02-23, the first file will be named\n"
+	    . "   2009-02-23_001.jpg, the second 2009-02-23_002.jpg, and\n"
+	    . "   so-on. The default is yyyy-mm-dd_nnn. You can simply hit\n"
+	    . "   return here if you want to keep the default.$c{o}\n\n";
+
+	while (1) {
+		my $format = &prompt("Enter the date format, or blank for "
+			. "<yyyy-mm-dd_nnn>", "yyyy-mm-dd_nnn");
+
+		# Validate the format.
+		if ($format !~ /yyyy/ || $format !~ /mm/ || $format !~ /dd/
+		|| $format !~ /n+/) {
+			print "\n$c{r}You've entered an invalid date format. "
+				. "Try again.$c{o}\n\n";
+		}
+		else {
+			# Good.
+			$o->{format} = $format;
+			last;
+		}
+	}
+}
+if (!defined $o->{date}) {
+	print "\n$c{c}2: Enter the date that you want these files to be renamed\n"
+	    . "   after. Enter the date in the format of yyyy-mm-dd.\n"
+	    . "   Today's date is $c{g}$today$c{c}.$c{o}\n\n";
+
+	while (1) {
+		my $date = &prompt("Enter the date to rename the files after, "
+			. "or <$today>", $today);
+
+		# Validate the date.
+		if ($date !~ /^(\d\d\d\d)\-(\d\d)\-(\d\d)$/) {
+			print "\n$c{r}You've entered an invalid date. The date\n"
+			    . "must be in yyyy-mm-dd format.$c{o}\n\n";
+		}
+		else {
+			# Good.
+			$o->{date} = $date;
+			last;
+		}
+	}
+}
+if (1) {
+	print "\n$c{c}3: Your files will be renamed beginning with the number "
+	    . $c{g} . $o->{start} . "$c{c}.$c{o}\n\n";
+
+	my $answer = &prompt("Okay to begin at the number $o->{start}? "
+		. " [y/n] <y>",
+		"y",
+		qw(y yes n no));
+	if ($answer =~ /^n/i) {
+		while (1) {
+			my $start = &prompt("What number do you want to "
+				. "start at, or <1>", 1);
+			if ($start !~ /^\d+$/) {
+				print "\n$c{r}Invalid answer.$c{o}\n\n";
+			}
+			else {
+				$o->{start} = $start;
+				last;
+			}
+		}
+	}
+}
+
+##############################
+# Summarize What's Going On  #
+##############################
+
+my @files = &getFileList();
+my $numFiles = scalar(@files);
+my ($nss) = ($o->{format} =~ /(n+)/i);
+our $ns = length $nss;
+our ($year,$mon,$day) = ($o->{date} =~ /^(\d\d\d\d)\-(\d\d)\-(\d\d)$/);
+if (1) {
+	my $backuptext = "Your files will be backed up to $o->{backup}.";
+	if ($o->{nobackup}) {
+		$backuptext = "Your files will *NOT* be backed up.";
+	}
+	my $first = &datename($o->{start});
+	my $last  = &datename($o->{start} + $numFiles);
+	print "\n" . $c{c}
+		. ("=" x 70) . "$c{o}\n"
+		. "$c{g}Summary of Operations:$c{o}\n\n"
+		. "$c{c}Your $numFiles files are going to be renamed in the format\n"
+		. "'$o->{format}' using the date '$o->{date}', beginning with\n"
+		. "the number $o->{start}. They will be renamed from\n"
+		. "$first to $last.\n\n"
+		. "$backuptext$c{o}\n\n";
+
+	my $proceed = &prompt("Okay to proceed? [y/n] <n>", "n",
+		qw(y yes n no));
+	unless ($proceed =~ /^y/i) {
+		print "\nAborting procedure!\n";
+		exit(0);
+	}
+}
+
+##############################
+# Main Operation             #
+##############################
+
+my $int = $o->{start};
+foreach my $file (@files) {
+	next unless -f $file;
+	my ($ext) = ($file =~ /\.([A-Za-z0-9]+?)$/i);
+	$ext = "jpg" unless defined $ext;
+	print "$c{c}Looking at file $file$c{o}\n";
+	unless ($o->{nobackup}) {
+		my $backup = $file;
+		my $bi = 1;
+		while (-f "$o->{backup}/$backup") {
+			$backup = "[$bi] $file";
+			$bi++;
+		}
+		print "   Backing it up as $o->{backup}/$backup... ";
+		copy ($file, "$o->{backup}/$backup");
+		if (-f "$o->{backup}/$backup") {
+			print "Done!\n";
+		}
+		else {
+			die "$c{r}Error: couldn't back it up: $!$c{o}";
+		}
+	}
+
+	my $newName = &datename($int) . "." . lc($ext);
+	$int++;
+	print "   Renaming file to $newName"
+		. ($o->{force} ? " (forced)" : "")
+		. "... ";
+	if (-f $newName && !$o->{force}) {
+		print "Warning: File already exists!$c{r}\n";
+		my $continue = &prompt(
+			"   The file $newName already exists. Overwrite? "
+			. "[y/n] <n>", "n", qw(y yes n no));
+
+		if ($continue !~ /^y/i) {
+			print "   Skipping rename of $file!$c{o}\n";
+			next;
+		}
+
+		print "   Renaming file to $newName (forced)... $c{o}";
+	}
+
+	# Rename it.
+	rename ($file, $newName);
+	print "$c{g}Done!$c{o}\n";
+}
+
+print "\n"
+	. "$c{g}Procedure completed. Backups were saved to $o->{backup}.$c{o}\n";
+exit(0);
+
+sub datename {
+	my $i = shift;
+
+	my $format = $o->{format};
+	$format =~ s/yyyy/$year/ig;
+	$format =~ s/mm/$mon/ig;
+	$format =~ s/dd/$day/ig;
+	my $sprint = sprintf("%0${ns}d", $i);
+	$format =~ s/n+/$sprint/ig;
+	return $format;
+}
+
+sub getFileList {
+	if (@ARGV) {
+		return (@ARGV);
+	}
+	my @return = ();
+	opendir (DIR, ".");
+	foreach my $f (sort(grep(/^\./, readdir(DIR)))) {
+		if (-f $f) {
+			push (@return, $f);
+		}
+	}
+	closedir (DIR);
+	return (@return);
+}
+
+sub prompt {
+	my $question = shift;
+	my $default = shift;
+	my @accept = ();
+
+	my $asking = 1;
+	while ($asking) {
+		print "$question ";
+		chomp (my $answer = <STDIN>);
+
+		if (defined $answer && length $answer) {
+			if (@accept) {
+				foreach my $a (@accept) {
+					if ($answer eq $a) {
+						return $a;
+					}
+				}
+				print "Invalid answer.\n";
+			}
+			else {
+				return $answer;
+			}
+		}
+		else {
+			if (@accept) {
+				print "INvalid answer.\n";
+			}
+			else {
+				return $default;
+			}
+		}
+	}
+}
+
+sub help {
+	print <<EOF;
+NAME
+
+	datename - Massively rename multiple files
+
+USAGE
+
+	datename [options] <files>
+
+OPTIONS
+
+	The following options can be provided at the command line, or will be
+	prompted for during operation.
+
+	--format, -f <format>
+
+		Provide the date format. Should contain yyyy, mm, dd, and a
+		sequence of at least one n. Ex: yyyy-mm-dd_nnn
+
+	--date, -d <date>
+
+		Provide the date. Should be in yyyy-mm-dd format, e.g.
+		2009-02-23
+
+	--start, -s <number>
+
+		Enter the iteration number to begin renaming files at. By
+		default it is 1.
+
+	The following options will modify the default behavior of the program:
+
+	--backup, -b <directory>
+
+		Specify the directory you want the files backed up into.
+		Default is ./datename-backup
+		This folder will try to be created if it doesn't exist.
+
+	--nobackup
+
+		Do not back up files (I don't recommend this option).
+
+	--force
+
+		Force rename all files (do not prompt the user if the file
+		already exists).
+
+EXAMPLES
+
+	; Specify all the prompt questions on the command line and rename
+	; JPG and PNG images only.
+	datename -f "yyyy-mm-dd_nnn" -d "2009-02-23" -s 100 *.jpg *.png
+
+	; Rename JPG, BMP, and GIF, will be prompted for the other options
+	datename *.jpg *.bmp *.gif
+
+	; Rename everything
+	datename *
+
+AUTHOR
+
+	Casey Kirsle
+	http://www.kirsle.net/
+EOF
+	exit(1);
+}

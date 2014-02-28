@@ -1,0 +1,90 @@
+#!/usr/bin/env python
+
+# window-notify: Watch for windows with particular titles and pop up a
+# desktop notification when they appear.
+#
+# Useful for certain web apps that don't properly handle desktop notifications.
+# You'll need to make sure you keep the app tab on a window by itself so that
+# its title is always visible to the window manager.
+#
+# Usage: window-notify '* Title 1' '! * Title 2' 'etc.'
+#
+# Requires programs:
+#   - wmctrl
+#   - notify-send
+#
+# --Kirsle
+# http://sh.kirsle.net/
+
+from sys import argv, exit
+import time
+import subprocess
+
+# Config
+config = dict(
+    # Icon to use
+    icon = "/usr/share/icons/gnome/48x48/status/user-available.png",
+
+    # Title
+    title = "Window Notification:",
+)
+
+if len(argv) == 1:
+    print "Usage: window-notify 'Title to watch for' 'etc...'"
+    exit()
+
+titles = argv[1:]
+
+def safe_output(args):
+    retval = None
+    try:
+        retval = subprocess.check_output(args)
+    except:
+        pass
+    return retval
+
+def safe_call(args):
+    try:
+        subprocess.call(args)
+    except:
+        pass
+
+def notify(title):
+    # Notification pop-up.
+    safe_call(["notify-send",
+        "-a", __name__,
+        "-i", config['icon'],
+        config['title'],
+        title,
+    ])
+
+    # Try to add the Urgent hint to the window.
+    safe_call(["wmctrl", "-r", title, "-b", "add,demands_attention"])
+
+# Keep track of which titles we currently see, so we don't notify a ton
+# of times for the same title.
+visible = { key: False for key in titles }
+
+# Begin watching.
+while True:
+    time.sleep(0.2)
+    output = safe_output(["wmctrl", "-l"])
+    if not output: continue
+    seen_this_time = dict() # Titles we see on this loop
+    for line in output.split("\n"):
+        if len(line) == 0:
+            continue
+        parts = line.split(" ", 4)
+        real_title = parts[-1]
+        for title in titles:
+            if title in real_title:
+                seen_this_time[title] = True
+                # Window exists, did we already notify?
+                if not visible[title]:
+                    notify(real_title)
+
+    # Flag the visibility of each title.
+    for title in titles:
+        visible[title] = title in seen_this_time
+
+# vim:expandtab

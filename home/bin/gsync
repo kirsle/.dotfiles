@@ -1,0 +1,25 @@
+#!/usr/bin/perl -w
+
+# gsync - Graphically run the `sync` command to flush the write buffers to
+# flash drives and things in Linux.
+#
+# If you want to make sure data is written to a flash drive without having to
+# unmount it, sync is the command to run. This just adds libnotify popups
+# about it.
+
+use strict;
+use warnings;
+
+# Icon to use
+my $icon = "/usr/share/icons/gnome/32x32/actions/stock_refresh.png";
+
+# Start
+system("notify-send",
+	"--icon" => $icon,
+	"Syncing removable media...");
+my $now = time();
+system("sync");
+my $elapsed = time() - $now;
+system("notify-send",
+	"--icon" => $icon,
+	"Sync completed in $elapsed second" . ($elapsed == 1 ? '' : 's') . "!");

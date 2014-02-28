@@ -1,0 +1,43 @@
+#!/usr/bin/perl -w
+
+# udptoss - Throw UDP packets at a host.
+# Usage: udptoss <target host> <port number> [message]
+#
+# Sends "Hello world! Can you hear me?" to the target host:port once per second
+# over UDP. Use Wireshark on the target to verify it sees the UDP packets.
+#
+# --Kirsle
+# http://sh.kirsle.net/
+
+use strict;
+use warnings;
+use IO::Socket;
+
+if (scalar(@ARGV) < 2) {
+	print "Usage: udptoss <target host> <port> [message]\n";
+	exit(1);
+}
+
+my $host = shift(@ARGV);
+my $port = shift(@ARGV);
+
+print "Preparing connection to $host port UDP $port...\n";
+my $udp = IO::Socket::INET->new (
+	PeerAddr => $host,
+	PeerPort => $port,
+	Proto    => 'udp',
+	Timeout  => 30,
+);
+unless (defined $udp) {
+	die "Couldn't create UDP socket to $host:$port: $!";
+}
+
+my $packet = shift(@ARGV) || "Hello world! Can you hear me?";
+
+print "Sending packets...\n";
+my $i = 0;
+while (++$i) {
+	print "[$i] $packet\n";
+	$udp->send("$packet\x0D\x0A");
+	sleep 1;
+}

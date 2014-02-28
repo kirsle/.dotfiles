@@ -1,0 +1,49 @@
+#!/usr/bin/perl -w
+
+# flashget - Download Flash videos from any hosting site.
+# Usage: flashget
+# Author: Kirsle
+# http://sh.kirsle.net/
+
+# This script doesn't care what your flash player is called. It just looks for
+# any process that owns a /tmp/Flash####### file and copies it.
+
+use strict;
+use warnings;
+use File::Copy;
+
+my $home = defined $ENV{HOME} ? $ENV{HOME} : ".";
+
+print "flashget - Searching for Flash videos to rip. For best results, make sure\n"
+	. "you FULLY BUFFER the video first in your web browser.\n\n";
+
+my $count = 0;
+opendir (my $proc, "/proc");
+foreach my $pid (sort { $a <=> $b } (grep(/^\d+$/, readdir($proc)))) {
+	# Skip PID's we can't read from.
+	next unless -r "/proc/$pid/fd";
+
+	# Look for flash videos.
+	my @fd = `ls -l /proc/$pid/fd`;
+	foreach my $line (@fd) {
+		chomp $line;
+		$line =~ s/[\x0D\x0A]//g;
+		next unless length $line;
+
+		my @parts = split(/\s+/, $line);
+		my $file  = $parts[-2];
+		my $id    = $parts[-4];
+
+		# Looks like Flash?
+		if ($file =~ m{^/tmp/(Flash.*?)$}) {
+			# Copy it.
+			my $dest = "$home/$1.flv";
+			print "Recover from PID $pid: $id -> $dest\n";
+			copy("/proc/$pid/fd/$id", $dest) or print "ERR: Couldn't copy to $dest: $@\n";
+			$count++;
+		}
+	}
+}
+closedir ($proc);
+
+print "\nRecovered $count Flash video(s).\n";

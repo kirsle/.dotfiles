@@ -1,0 +1,67 @@
+#!/usr/bin/perl
+
+# dumpsms - Dump the SMS logs saved by "SMS Backup & Restore" into friendly
+# readable HTML files!
+#
+# Usage: dumpsms <sms-dump.xml>
+# Ex:    dumpsms sms-20120629202942.xml
+#
+# It will create a folder "./sms" if it doesn't exist, and output all the logs
+# into that folder. It saves HTML files after the contact name, if available.
+# Logs are opened in append mode, so if you run the script multiple times the
+# logs get appended to the end of the file!
+#
+# --Kirsle
+# http://sh.kirsle.net/
+
+use 5.14.0;
+use strict;
+use warnings;
+use autodie;
+use XML::Simple;
+
+my $xml = shift or die "$0 <*.xml>";
+
+mkdir("sms") unless -d "sms";
+my $ref = XMLin($xml);
+
+foreach my $sms (@{$ref->{sms}}) {
+	my $num = $sms->{address};
+
+	my $color = $sms->{type} eq "1" ? "receive" : "send";
+	my $dir   = $sms->{type} eq "1" ? "From" : "Sent to";
+
+	my $file = "./sms/$sms->{contact_name}.html";
+	if (!-f $file) {
+		open (my $fh, ">", $file);
+		print {$fh} "<!DOCTYPE html>\n"
+			. "<html>\n"
+			. "<head>\n"
+			. "<title>Conversation with $sms->{contact_name}</title>\n"
+			. "<style>\n"
+			. "body {\n"
+			. " font-family: Verdana,Arial,sans-serif;\n"
+			. " font-size: small;\n"
+			. " color: #000000;\n"
+			. "}\n"
+			. ".receive {\n"
+			. " color: #0000FF;\n"
+			. "}\n"
+			. ".send {\n"
+			. " color: #FF0000;\n"
+			. "}\n"
+			. "</style>\n"
+			. "</head>\n"
+			. "<body>\n\n";
+		close($fh);
+	}
+
+	open (my $fh, ">>:utf8", "./sms/$sms->{contact_name}.html");
+	print {$fh} "<strong class='$color'>$sms->{readable_date}</strong><br>\n"
+		. "<strong>$dir</strong> $sms->{contact_name} - $num\n"
+		. "<blockquote>$sms->{body}</blockquote>\n"
+		. "<hr>\n";
+	close($fh);
+}
+
+say "Wrote logs to ./sms";

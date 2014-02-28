@@ -1,0 +1,55 @@
+#!/usr/bin/perl -w
+
+# chmodfix - automagically fix file permissions, recursively, to their sane
+# default values:
+#
+# CGI scripts  = 0755
+# directories  = 0755
+# normal files = 0644
+#
+# usage: chmodfix <start-directory>
+#
+# --Kirsle
+# http://sh.kirsle.net/
+
+if (scalar(@ARGV)) {
+	foreach my $dir (@ARGV) {
+		if (-d $dir) {
+			print "#####################\n";
+			print "Fix: $dir\n";
+			print "#####################\n";
+			&scanDir($dir);
+		}
+	}
+}
+else {
+	print "Usage: chmodfix <directories>\n";
+	exit(0);
+}
+
+sub scanDir {
+	my $dir = shift;
+
+	opendir (DIR, $dir);
+	foreach my $file (readdir(DIR)) {
+		next if $file eq ".";
+		next if $file eq "..";
+
+		if (-d "$dir/$file") {
+			print "chmod directory: 0755 ($dir/$file)\n";
+			chmod (0755, "$dir/$file");
+			&scanDir ("$dir/$file");
+		}
+		else {
+			if ($file =~ /\.(cgi|pl)$/i) {
+				print "chmod CGI file: 0755 ($dir/$file)\n";
+				chmod (0755, "$dir/$file");
+			}
+			else {
+				print "chmod file: 0644 ($dir/$file)\n";
+				chmod (0644, "$dir/$file");
+			}
+		}
+	}
+	closedir (DIR);
+}

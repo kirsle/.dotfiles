@@ -1,0 +1,95 @@
+#!/usr/bin/env python
+
+"""Initialize your dotfiles setup.
+
+Usage: setup [--install]
+
+This will create symlinks in $HOME for every file listed in ./home in this
+repository. It will NOT delete existing files in $HOME; use the --install
+option to delete existing files."""
+
+from __future__ import print_function
+import sys
+import os
+import os.path
+import shutil
+import re
+
+# Install? (deletes existing files in $HOME).
+install = "--install" in sys.argv
+
+# Get the path to the git repo.
+basedir = os.path.abspath(os.path.dirname(__file__))
+homedir = os.environ.get("HOME", ".")
+source  = os.path.join(basedir, "home")
+
+print("Setting up .dotfiles")
+print("====================")
+print("")
+if install:
+    print("* Install mode: will delete files in $HOME and set up symlinks!")
+
+def crawl(folder):
+    """Recursively crawl a folder. Directories will be created relative to
+    $HOME, and files in those directories will be symlinked."""
+    for item in sorted(os.listdir(folder)):
+        # Resolve the path to this file relative to $HOME and the absolute
+        # path to the symlink target. First get the path to the target.
+        target = os.path.join(folder, item)
+
+        # Remove the source dir prefix from it to get the path relative
+        # to the "./home" folder, then use that for $HOME.
+        path   = re.sub(r'^{}/'.format(source), '', target)
+        home   = os.path.join(homedir, path)
+
+        # If the target is a directory, make sure it exists relative to $HOME.
+        if os.path.isdir(target):
+            if not os.path.isdir(home):
+                print("Create directory:", home)
+                os.mkdir(home)
+
+            # Recursively crawl it.
+            crawl(target)
+            continue
+
+        # Otherwise it's a file. In install mode, delete the existing file.
+        if install and (os.path.exists(home) or os.path.islink(home)):
+            print("Delete:", home)
+            os.unlink(home)
+
+        # Already linked?
+        if os.path.islink(home):
+            link = os.readlink(home)
+            if link == target:
+                print("Already linked:", home)
+                continue
+            else:
+                print("Delete existing link:", home)
+                os.unlink(home)
+
+        # Link it.
+        print("Link: {} -> {}".format(home, target))
+        os.symlink(target, home)
+
+crawl(source)
+
+"""for item in os.listdir(source):
+    home   = os.path.join(os.environ.get("HOME", "."), item)
+    target = os.path.join(source, item)
+
+    if install and (os.path.exists(home) or os.path.islink(home)):
+        print("Delete:", home)
+        if os.path.islink(home) or not os.path.isdir(home):
+            os.unlink(home)
+        else:
+            shutil.rmtree(home)
+
+    if os.path.islink(home):
+        print("Already linked:", home)
+        continue
+
+    print("{} -> {}".format(home, target))
+    os.symlink(target, home)
+"""
+
+# vim:expandtab

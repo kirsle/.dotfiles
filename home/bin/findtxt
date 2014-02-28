@@ -1,0 +1,71 @@
+#!/usr/bin/perl -w
+
+# findtxt - Recursively scan a directory looking for a string inside every file
+# inside. It's like a simple grep except it scans directories and all files.
+#
+# Usage: findtxt <strings to find> [directory]
+
+use strict;
+use warnings;
+
+if (not scalar(@ARGV)) {
+	print "Usage: findtxt <strings to find> [directory]\n"
+		. "Example: findtxt \"hello world\" /home\n"
+		. "         findtxt perl cgi /usr/lib\n";
+	exit(0);
+}
+
+my $base = `pwd`;
+if (-d $ARGV[-1]) {
+	$base = pop(@ARGV);
+}
+
+$base = '' if $base eq '/';
+
+print "Scanning... please wait...\n";
+
+our $hits = 0;
+my @files = &scanDir($base);
+
+print "\n\nResults:\n"
+	. join ("\n",@files)
+	. "\n";
+
+sub scanDir {
+	my $dir = shift;
+
+	my @files = ();
+
+	print "[$hits] Scan $dir/\n";
+
+	opendir (DIR, "$dir/") || warn "Can't read $dir: $!\n";
+	foreach my $file (readdir(DIR)) {
+		next if $file eq '.';
+		next if $file eq '..';
+		next if -l "$dir/$file"; # skip symlinks
+		if (-d "$dir/$file") {
+			next if ("$dir/$file") =~ /\/dev/i;
+			push (@files, &scanDir("$dir/$file"));
+		}
+		elsif (-f "$dir/$file") {
+			# read this file.
+			open (FILE, "$dir/$file") || do {
+				warn "Can't read $dir/$file: $!\n";
+				next;
+			};
+			while (<FILE>) {
+				foreach my $str (@ARGV) {
+					if ($_ =~ /$str/i) {
+						push (@files,"$dir/$file");
+						$hits++;
+						last;
+					}
+				}
+			}
+		}
+		select (undef,undef,undef,0.001);
+	}
+	closedir (DIR);
+
+	return @files;
+}

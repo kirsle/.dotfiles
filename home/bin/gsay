@@ -1,0 +1,27 @@
+#!/usr/bin/perl
+
+# gsay - Text to Speech using Google
+# Usage: gsay <message>
+#
+# --Kirsle
+# http://sh.kirsle.net/
+
+use strict;
+use warnings;
+use URI::Escape;
+
+if (scalar(@ARGV) == 0 || $ARGV[0] =~ /^-/) {
+	die "Usage: $0 <message>\n";
+}
+
+my $message = uri_escape(join(" ", @ARGV));
+
+# Check for mplayer.
+chomp(my $mplayer = `which mplayer 2>/dev/null`);
+if ($? || !$mplayer) {
+	die "Couldn't find `mplayer` - please install it!\n";
+}
+
+# Fork a background process to speak and exit immediately.
+exit if fork();
+exec("$mplayer -ao alsa -really-quiet -noconsolecontrols \"http://translate.google.com/translate_tts?tl=en&q=$message\" >/dev/null 2>&1");

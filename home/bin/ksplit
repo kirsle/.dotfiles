@@ -1,0 +1,279 @@
+#!/usr/bin/perl -w
+
+# ksplit - Kirsle's File Splitter
+#
+# This is a super simple file splitter. See `ksplit --help` for help.
+#
+# --Kirsle
+# http://sh.kirsle.net/
+
+use strict;
+use warnings;
+use Getopt::Long;
+
+unless (@ARGV) {
+	&usage();
+}
+
+# Get command-line options.
+my %o = (
+	verbose => 0, # --verbose, -v
+	help    => 0, # --help, -h, -?
+	join    => 0, # --join, -j
+	split   => 0, # --split, -x
+	bs      => (1024*1024), # byte size (1 MB default)
+	blocks  => 512,         # block size
+	cleanup => 0,           # --cleanup
+	file    => '',          # file to run on
+);
+GetOptions (
+	'split|x'     => \$o{split},
+	'join|j'      => \$o{join},
+	'size|bs|s=s' => \$o{bs},
+	'blocks|b=i'  => \$o{blocks},
+	'cleanup|c'   => \$o{cleanup},
+	'verbose|v'   => \$o{verbose},
+	'help|h|?'    => \$o{help},
+);
+
+# Asking for help?
+if ($o{help}) {
+	&help();
+}
+
+main();
+
+sub main {
+	if (scalar(@ARGV)) {
+		$o{file} = shift(@ARGV);
+	}
+	else {
+		print "No input file specified.\n"
+			. "See ksplit --help\n";
+		exit(1);
+	}
+
+	# Let them specify the size in K, M, G, or T.
+	if ($o{bs} =~ /(k|m|g|t)$/i) {
+		my $type = uc($1);
+		$o{bs} =~ s/[^0-9]//g;
+		if ($type eq "K") {
+			$o{bs} *= 1024;
+		}
+		elsif ($type eq "M") {
+			$o{bs} *= 1024*1024;
+		}
+		elsif ($type eq "G") {
+			$o{bs} *= 1024**3;
+		}
+		elsif ($type eq "T") {
+			$o{bs} *= 1024**4;
+		}
+	}
+
+	# Did we specify what we want to do?
+	if ($o{split} && $o{join}) {
+		print "You can't split and join at the same time.\n";
+		exit(1);
+	}
+	elsif ($o{split} == 0 && $o{join} == 0) {
+		# Check the filename to guess what we want to do.
+		if ($o{file} =~ /\.s\d+$/i) {
+			# We're prolly rejoining it.
+			$o{join} = 1;
+		}
+		else {
+			# We're prolly splitting it.
+			$o{split} = 1;
+		}
+	}
+
+	# Splitting or joining?
+	if ($o{split}) {
+		verbose("Splitting $o{file} into $o{bs} byte chunks...");
+
+		open (READ, $o{file}) or die "Can't read file: $!";
+		binmode READ;
+
+		# Begin reading.
+		my $i = 1;
+		my $target = "$o{file}.s" . sprintf("%03d", $i);
+		my $bytes_read = 0;
+		my $buffer = '';
+
+		# And... go.
+		verbose("Opening $target for writing...");
+		open (WRITE, ">$target") or die "Can't open $target for writing: $!";
+		binmode WRITE;
+		while (read(READ, $buffer, $o{blocks})) {
+			print WRITE $buffer;
+			$bytes_read += $o{blocks};
+
+			# Is the next read gonna go over the byte size?
+			if ($bytes_read + $o{blocks} > $o{bs}) {
+				# Start a new file.
+				close (WRITE);
+				$i++;
+				$target = "$o{file}.s" . sprintf("%03d", $i);
+				$buffer = '';
+				verbose("Wrote $bytes_read bytes\n"
+					. "Opening $target for writing...");
+				$bytes_read = 0;
+				open (WRITE, ">$target") or die "Can't open $target for writing: $!";
+				binmode WRITE;
+			}
+		}
+
+		# Close the last handle.
+		close (WRITE);
+
+		# Done.
+		verbose("Done.");
+	}
+	elsif ($o{join}) {
+		verbose("Joining $o{file} together...");
+
+		# Make sure they gave us the first one.
+		my $source = $o{file};
+		if ($source !~ /\.s001$/i) {
+			# Make it the first.
+			if ($source =~ /\.s\d+$/i) {
+				$source =~ s/\.s\d+$/.s001/i;
+			}
+			else {
+				die "Can't find source file #1!";
+			}
+		}
+
+		# Find the target file.
+		my $target = $source;
+		$target =~ s/\.s\d+$//i;
+
+		verbose("Opening target file $target for writing...");
+		open (WRITE, ">$target");
+		binmode WRITE;
+
+		# Read from the files.
+		my $i = 1;
+		while (1) {
+			$source = "$target.s" . sprintf("%03d", $i);
+			if (!-f $source) {
+				verbose("No more source files.");
+				last;
+			}
+
+			verbose("Opening source file $source for reading...");
+			open (READ, $source) or die "Can't read from $source: $!";
+			binmode READ;
+
+			my $buffer = '';
+			while (read(READ, $buffer, $o{bs})) {
+				print WRITE $buffer;
+			}
+
+			close(READ);
+			$i++;
+
+			# Clean up?
+			if ($o{cleanup}) {
+				verbose("Cleaning up source file $source");
+				unlink($source);
+			}
+		}
+
+		# Done.
+		close (WRITE);
+		verbose("Done.");
+	}
+}
+
+sub verbose {
+	my $line = shift;
+	if ($o{verbose}) {
+		print "$line\n";
+	}
+}
+
+sub usage {
+	print "Usage: ksplit [-v -s <byte size> -b <block size> -j|-x -c] file\n"
+		. "Try ksplit --help for help.\n";
+	exit(1);
+}
+
+sub help {
+	print qq{
+NAME
+
+  ksplit - Split and join large files.
+
+USAGE
+
+  ksplit [-v -s <byte size> -b <block size> -j|-x -c] file
+
+DESCRIPTION
+
+  This tool splits up and joins a large file into several smaller files.
+
+OPTIONS
+
+  --verbose
+  -v
+
+    Give verbose output while the command is running (otherwise it runs
+    silently).
+
+  --size <byte size>
+  --bs
+  -s
+
+    Specify the maximum file size for each chunk that the file is split into.
+    You can use K, M, G, or T at the end to specify larger sizes. Examples:
+
+      -s 1.44M
+      -s 1024
+      -s 4G
+
+  --blocksize <bytes>
+  --block
+  -b
+
+    Specify the number of bytes to copy at a time. A larger number will make
+    the operation faster, however it will require more memory to run.
+
+  --join, -j
+  --split, -x
+
+    Normally ksplit will try to detect what you want to do based on the file
+    you give it. Specify --join or --split manually to override it. You
+    can't use both options at the same time.
+
+  --cleanup
+  -c
+
+    When joining the file back together, automatically delete each part
+    after it is copied from.
+
+INPUT FILE
+
+  If the input file ends with `.s###` then ksplit will assume you want to join
+  the file and will try to find the first one (e.g.  .s001). Otherwise it
+  assumes you want to split the file. You can override its assumption by using
+  --join or --split as command line arguments.
+
+EXAMPLES
+
+  To split a very large movie into 256 MB chunks:
+
+    ksplit --size 256M "My Movie.mpg"
+
+  To join it back together from the parts and clean up the part files.
+
+    ksplit --clean "My Movie.mpg.s001"
+
+AUTHOR
+
+  Casey Kirsle
+  http://www.kirsle.net/
+};
+	exit(1);
+}

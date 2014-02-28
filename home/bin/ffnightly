@@ -1,0 +1,146 @@
+#!/usr/bin/perl
+
+# ffnightly - Download the latest version of Firefox Nightly.
+#
+# Run this script to fetch the latest version of Firefox Nightly. By default,
+# it will be installed into /opt/firefox-nightly with a symlink to run it at
+# /usr/bin/firefox-nightly. Furthermore, it will show up in your applications
+# menu as "Firefox Nightly".
+#
+# This script needs to be run as root (if you don't, it will attempt to sudo
+# run itself). To run it from a cron job, use the --force option and it will
+# skip prompting you to make sure Firefox is not running first.
+#
+# Usage: ffnightly [--force]
+#
+# --Kirsle
+# http://sh.kirsle.net
+
+use 5.14.0;
+use strict;
+use warnings;
+use English;
+use File::Basename;
+use Time::Local;
+chomp(my $ARCH = `uname -p`);
+
+################################################################################
+# Configuration                                                                #
+################################################################################
+
+# Where to install Firefox Nightly to.
+my $INSTALL = "/opt/firefox-nightly";
+
+# Where to install the launcher symlink to.
+my $BIN = "/usr/bin/firefox-nightly";
+
+# Where to install the launcher shortcut to.
+my $LAUNCHER = "/usr/share/applications/firefox-nightly.desktop";
+
+# Where are the Firefox nightlies kept?
+my $NIGHTLY = sprintf("ftp://ftp.mozilla.org/pub/firefox/nightly/latest-trunk/firefox-14.0a1.en-US.linux-%s.tar.bz2", $ARCH);
+
+################################################################################
+# End Configuration                                                            #
+################################################################################
+
+# Base name of tarball.
+my $TARBALL = basename($NIGHTLY);
+
+# Mozilla plugins lib.
+my $PLUGINS = "/usr/lib" . ($ARCH eq 'x86_64' ? '64' : '') . "/mozilla/plugins";
+
+# Check for required tools.
+my %t = check_required();
+
+unless (@ARGV && $ARGV[0] eq '--force') {
+	say "Make sure you close Firefox before continuing.";
+	print "Is Firefox closed now? [yN] ";
+	chomp(my $ans = <STDIN>);
+	exit(0) unless $ans =~ /^y/;
+}
+
+# Needs to be root.
+if ($EFFECTIVE_USER_ID != 0) {
+	say "You need to run this script as root.";
+	exec($t{sudo}, $0, '--force');
+	exit(1);
+}
+
+# Make a temp folder for it.
+my $tmp = "/tmp/firefox-nightly-$$-" . time();
+run("mkdir -p $tmp");
+
+# Fetch Firefox Nightly.
+chdir($tmp);
+run("wget $NIGHTLY");
+run("tar -xjvf $TARBALL");
+
+# Move it to the destination.
+run("rm -rf $INSTALL") if -d $INSTALL;
+if (!-d $INSTALL) {
+	run("mkdir -p $INSTALL");
+}
+run("mv firefox/* $INSTALL/");
+
+# Make the symlink.
+if (-e $BIN) {
+	run("rm -f $BIN");
+}
+
+# Make the launcher.
+open (my $launch, ">", $LAUNCHER);
+print {$launch} <<"EOF";
+[Desktop Entry]
+Version=1.0
+Name=Firefox Nightly
+GenericName=Web Browser
+Comment=Browse the Web
+Exec=firefox-nightly %u
+Icon=$INSTALL/icons/mozicon128.png
+Terminal=false
+Type=Application
+StartupWMClass=Firefox-bin
+MimeType=text/html;text/xml;application/xhtml+xml;application/vnd.mozilla.xul+xml;text/mml;x-scheme-handler/http;x-scheme-handler/https;
+StartupNotify=true
+Categories=Network;WebBrowser;
+EOF
+close ($launch);
+
+# Link the binary.
+run("ln -s $INSTALL/firefox $BIN");
+
+# Flash plugins etc!
+if (-d "$INSTALL/plugins") {
+	run("rm -rf $INSTALL/plugins");
+}
+run("ln -s $PLUGINS $INSTALL/plugins");
+
+# Cleanup.
+run("rm -rf $tmp");
+
+say "You have updated to the latest Firefox Nightly. The binary is installed";
+say "to: $BIN";
+exit(0);
+
+sub run {
+	my $cmd = shift;
+	say "\$ $cmd";
+	system($cmd);
+}
+
+sub check_required {
+	my @tools = qw(sudo wget tar);
+	my %paths = ();
+	foreach my $tool (@tools) {
+		chomp(my $path = `which $tool`);
+		if ($? == 0) {
+			$paths{$tool} = $path;
+		}
+		else {
+			say "This script requires `$tool`, which wasn't found in your \$PATH.";
+			exit(1);
+		}
+	}
+	return %paths;
+}

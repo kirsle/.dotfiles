@@ -1,0 +1,43 @@
+#!/usr/bin/perl -w
+
+# flatten-linked - Create symlinks to every file in a directory, recursively,
+# creating the links in the current working directory.
+#
+# If you have iTunes or similar managing your music and it organizes them in a
+# large folder structure (Band Name/Album Name/Song Name.mp3) you can run this
+# script on your iTunes folder and it will create links to every file in the
+# current folder. So you'll end up with a single folder "containing" all your
+# songs, when really they're all links to their real locations.
+#
+# But with this you can import your iTunes collection into XMMS or another
+# primitive media player very easily, by only importing one folder - the one
+# full of links.
+#
+# --Kirsle
+# http://sh.kirsle.net/
+
+unless (@ARGV) {
+	print "Usage: flatten-linked <directory>\n"
+		. "Creates symlinks to all files in current directory\n";
+	exit(1);
+}
+
+foreach (@ARGV) {
+	&crawl($_);
+}
+closedir (DIR);
+
+sub crawl {
+	my $dir = shift;
+	print "Crawling into directory $dir";
+	opendir (DIR, $dir) or die "Can't open dir $dir: $!";
+	foreach my $file (sort(grep(!/^\./, readdir(DIR)))) {
+		if (-d "$dir/$file") {
+			&crawl("$dir/$file");
+		}
+		elsif (-f "$dir/$file") {
+			print "Linking $dir/$file as ./$file\n";
+			system("ln", "-s", "$dir/$file", "./$file");
+		}
+	}
+}

@@ -1,0 +1,35 @@
+#!/usr/bin/perl -w
+
+# iphone-ringtone: convert MP3 tracks into M4R audio files for
+# iPhone ringtones.
+#
+# Requires: mplayer, faac
+#
+# --Kirsle
+# http://sh.kirsle.net/
+
+# Get args.
+scalar(@ARGV) or die "Usage: iphone-ringtone <track.mp3>";
+my $mp3 = shift(@ARGV);
+
+# Turn the mp3 name into an m4r name.
+my $m4r = $mp3;
+$m4r =~ s/\.mp3$/.m4r/i;
+$m4r .= ".m4r" unless $m4r =~ /\.m4r$/i;
+
+# Turn the m4r name into an m4a name (this is the name that
+# faac will produce when run).
+my $m4a = $m4r;
+$m4a =~ s/\.m4r$/.m4a/i;
+
+# Turn the m4r name into a .wav for mplayer.
+my $wav = $m4r;
+$wav =~ s/\.m4r$/.wav/i;
+
+# Run the commands.
+system("mplayer -vo null -vc null -ao pcm:fast:file=$wav $mp3");
+system("faac -b 128 -c 44100 -w $wav");
+rename($m4a,$m4r);
+unlink($wav);
+
+print "Done. Now scp the file to /Library/Ringtones/ on your iPhone.\n";

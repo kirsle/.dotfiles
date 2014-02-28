@@ -1,0 +1,137 @@
+#!/usr/bin/perl -w
+
+=head1 NAME
+
+podwrap - Word wrapper for (not only) POD document files.
+
+=head1 USAGE
+
+  podwrap [options] <file.pod>
+
+=head1 DESCRIPTION
+
+This script is for applying word wrapping to a POD document file. This should
+B<not> be used on a Perl module; only POD text.
+
+It will (re)format all the paragraphs in the POD document to apply a word wrap
+at whatever character width you want (default is 80 characters).
+
+It could also be applied to plain text documents, but is primarily meant for
+POD documents.
+
+=head1 OPTIONS
+
+=over 4
+
+=item --width, -w <width>
+
+Specify the character width to wrap words at; default is 80.
+
+=item --save, -s
+
+Save changes back to the source file. By default the changes are printed to
+STDOUT and not saved to the source file.
+
+=back
+
+=head1 AUTHOR
+
+Noah Petherbridge, http://sh.kirsle.net/
+
+=cut
+
+use strict;
+use warnings;
+use Getopt::Long;
+
+# Get command line options.
+my %o = (
+	width => 80,
+	save  => undef,
+	help  => undef,
+);
+GetOptions (
+	'width|w=i' => \$o{width},
+	'save|s'    => \$o{save},
+	'help|h|?'  => \$o{help},
+);
+
+# Help and Usage
+if ($o{help}) {
+	exec("perldoc $0");
+}
+elsif (scalar(@ARGV) == 0) {
+	print "Usage: podwrap [options] <filename.pod>\n"
+		. "See: podwrap --help for help\n";
+	exit(1);
+}
+
+# Read the file.
+my $source = shift(@ARGV);
+if (!-e $source) {
+	print "Can't read source file $source: not found\n";
+	exit(1);
+}
+open (READ, $source) or die "Can't open $source: $!";
+my @pod = <READ>;
+close (READ);
+chomp @pod;
+
+# Parse it a paragraph at a time.
+my @paragraph = ();
+my @output = ();
+my $inParagraph = 0;
+foreach my $line (@pod) {
+	$line =~ s/[\x0A\x0D]//g;
+	if (length $line == 0) {
+		push (@output,"");
+		$inParagraph = 0;
+		push (@output, wordWrap($o{width}, @paragraph));
+		@paragraph = ();
+		next;
+	}
+	elsif (length $line > 0 && $inParagraph == 0) {
+		$inParagraph = 1;
+	}
+	if ($inParagraph) {
+		push (@paragraph, $line);
+	}
+}
+if (scalar(@paragraph) > 0) {
+	push(@output, wordWrap($o{width}, @paragraph));
+}
+
+if ($o{save}) {
+	open (WRITE, ">$source") or die "Can't write $source: $!";
+	print WRITE join("\n",@output);
+	close (WRITE);
+	print "Wrote: $source\n";
+}
+else {
+	print join("\n",@output);
+}
+
+sub wordWrap {
+	my ($width,@lines) = @_;
+
+	# Don't apply wrapping for verbatim paragraphs.
+	if ($lines[0] =~ /^\s+/) {
+		return (@lines);
+	}
+
+	my @words = split(/\s+/, join(" ",@lines));
+	my $wrapped = "";
+
+	my $w = 0;
+	for (my $i = 0; $i < scalar(@words); $i++) {
+		my $wlen = length($words[$i]);
+		if (($w + $wlen + 1) > $width) {
+			$wrapped .= "\n";
+			$w = 0;
+		}
+		$wrapped .= "$words[$i] ";
+		$w += $wlen + 1;
+	}
+
+	return split(/\n/, $wrapped);
+}

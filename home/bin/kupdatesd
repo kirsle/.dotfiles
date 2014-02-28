@@ -1,0 +1,132 @@
+#!/usr/bin/perl
+
+# --- This script is no longer maintained. ---
+# It has been replaced by the Python version, pyupdatesd. The Python version
+# requires only pygtk2, which tends to come preinstalled on Fedora XFCE spins,
+# and is therefore much simpler to get set up. :)
+#
+# http://sh.kirsle.net/pyupdatesd
+# --------------------------------------------
+
+# kupdatesd - A simple yum update checker.
+#
+# This script will watch for available yum updates and show a GTK+ TrayIcon
+# and notification pop-up when updates become available.
+#
+# This is intended for desktop environments like XFCE that don't have a native
+# PackageKit update watcher.
+#
+# Set this script to run on session startup and it will check for updates every
+# 5 minutes (by default; this is configurable in the source code).
+#
+# --Kirsle
+# http://sh.kirsle.net
+
+use 5.14.0;
+use strict;
+use warnings;
+use Gtk2 -init;
+use Gtk2::TrayIcon;
+use Gtk2::Notify -init, "kupdatesd";
+
+$SIG{HUP} = $SIG{TERM} = sub {
+	exec($0);
+};
+
+################################################################################
+# Configuration Section                                                        #
+################################################################################
+
+my %c = (
+	# The title to be shown on the pop-up and the icon tooltip.
+	title    => "Updates Available",
+
+	# The message to be shown in the pop-up.
+	message  => "There are updates ready to install.",
+
+	# The icon to use for the pop-up and tray icon.
+	icon     => '/usr/share/icons/gnome/32x32/status/software-update-available.png',
+
+	# How often to check for updates (in seconds).
+	interval => 900,
+
+	# The path to your yum binary.
+	yum      => '/usr/bin/yum',
+
+	# The path to your graphical updater.
+	# gpk-update-viewer is provided by gnome-packagekit
+	gui      => '/usr/bin/yumex',
+);
+
+################################################################################
+# End Configuration Section                                                    #
+################################################################################
+
+# Gtk objects
+my ($icon, $image, $eventbox, $tooltip, $notify);
+my $visible = 0; # Icon is currently being displayed?
+
+# Enter the main loop.
+my $check = time() + $c{interval};
+while (1) {
+	select(undef,undef,undef,0.1);
+
+	# Keep Gtk2 active.
+	if (defined $icon) {
+		Gtk2->main_iteration while Gtk2->events_pending;
+	}
+
+	if (time() > $check) {
+		# Look for updates.
+		system("$c{yum} check-update > /dev/null 2>&1");
+		if (!$visible && $? >> 8 == 100) {
+			say "There are updates available!";
+			show_icon();
+		}
+		elsif ($visible && $? == 0) {
+			# Updates have gone away behind our back!
+			$icon->hide;
+			$visible = 0;
+		}
+
+		# Queue another check.
+		$check = time() + $c{interval};
+	}
+}
+
+sub show_icon {
+	# Already initialized this once before?
+	if (defined $icon) {
+		# Just show the icon and notification again.
+		$icon->show_all;
+		$notify->show;
+		$visible = 1;
+		return;
+	}
+
+	# Tray icon. Image goes in EventBox, EventBox goes inside TrayIcon.
+	$icon = Gtk2::TrayIcon->new("kupdatesd");
+	$image = Gtk2::Image->new_from_file($c{icon});
+	$eventbox = Gtk2::EventBox->new;
+	$eventbox->add($image);
+	$icon->add($eventbox);
+	$icon->show_all;
+
+	# Attach the tooltip.
+	$tooltip = Gtk2::Tooltips->new;
+	$tooltip->set_tip($icon, $c{title});
+
+	$eventbox->signal_connect("button_press_event", sub {
+		$icon->hide;
+		$visible = 0;
+		system($c{gui});
+	});
+
+	$notify = Gtk2::Notify->new(
+		$c{title},
+		$c{message},
+		$c{icon},
+	);
+	$notify->show;
+	$visible = 1;
+}

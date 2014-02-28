@@ -1,0 +1,33 @@
+#!/usr/bin/perl -w
+
+# mednafen-ptk - Perl/Tk front-end for launching mednafen.
+
+use strict;
+use warnings;
+
+# Path to ROMs.
+my $root = shift(@ARGV) || "$ENV{HOME}/ROMS/GBA/Games";
+
+# Get a ROM selection.
+chdir($root);
+my $rom = `zenity --title "Select a GameBoy or NES ROM" --file-selection`;
+chomp $rom;
+print "Selected: $rom\n";
+
+# A selection?
+if (defined $rom && $rom =~ /\.(gb|gbc|gba|nes)/i) {
+	if (-f $rom) {
+		# Launch Mednafen.
+		exec(
+			#"padsp", # pulseaudio oss emulation
+			"mednafen",
+			-sounddriver => "sdl", #"alsa", # sound driver
+			-vdriver     => "sdl",  # video driver (or opengl)
+			"-gb.xscale" => 4, # gameboy scaling
+			"-gb.yscale" => 4,
+			"-gba.xscale" => 2, # GBA scaling
+			"-gba.yscale" => 2,
+			$rom,
+		);
+	}
+}

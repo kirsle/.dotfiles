@@ -1,0 +1,56 @@
+#!/usr/bin/perl -w
+
+# scale: Front-end to changing the AppleDisplayScaleFactor, for Hackintosh
+# on netbooks where the screen resolution isn't tall enough for some windows.
+#
+# Set the scale factor for the session:
+#  scale 0.8
+#  !!! Remember to set it back to 1.0 when you're done !!!
+#
+# Set the scale just to launch a specific app, then set it back:
+#  scale 0.8 "Photo Booth"
+#  scale 0.8 /Applications/Photo\ Booth.app
+#
+# --Kirsle
+# http://sh.kirsle.net/
+
+unless (@ARGV) {
+	print "usage: scale <aspect-ratio> [app]\n"
+		. "ex: scale 0.8\n"
+		. "    scale 0.8 /Applications/Photo\\ Booth.app\n"
+		. "    scale 0.8 'Photo Booth'\n";
+	exit(1);
+}
+my $scale = shift(@ARGV);
+if ($scale =~ /[^0-9\.]/) {
+	die "Scale factor must be a number!";
+}
+my $app = undef;
+if (scalar(@ARGV)) {
+	$app = shift(@ARGV);
+	if (!-e $app) {
+		# Try a full path (e.g. Photo Booth -> /Applications/Photo Booth.app)
+		$app = "/Applications/$app.app";
+		if (!-e $app) {
+			die "Can't find $app: no such file.";
+		}
+	}
+}
+
+# set the scale
+system("defaults write -g AppleDisplayScaleFactor $scale");
+
+# launching an app too?
+if (defined $app) {
+	system("open \"$app\"");
+	system("defaults write -g AppleDisplayScaleFactor 1.0");
+	print "$app launched with scale ratio of $scale\n";
+	exit(0);
+}
+else {
+	if (int($scale) != 1) {
+		print "Scale set to $scale for the session. Be sure to "
+			. "reset it to 1.0 when you're done!\n";
+		exit(0);
+	}
+}

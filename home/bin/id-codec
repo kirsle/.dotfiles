@@ -1,0 +1,69 @@
+#!/usr/bin/perl
+
+# id-codec: Identify the codec used in a video file.
+#
+# Usage: id-codec *.avi
+#
+# Requires mplayer.
+#
+# --Kirsle
+# http://sh.kirsle.net/
+
+use 5.16.0;
+use strict;
+use warnings;
+use Getopt::Long;
+use Term::ANSIColor;
+
+my $help;
+my $color = 1;
+GetOptions(
+	'color!' => \$color,
+	'help|h|?' => \$help,
+);
+
+if ($help) {
+	die "Usage: id-codec [--nocolor] <video files>\n"
+		. "Use --nocolor to suppress ANSI color codes.\n";
+}
+
+my $mplayer;
+unless (chomp($mplayer = `which mplayer 2>/dev/null`)) {
+	die "This requires mplayer to be installed.\n";
+}
+
+foreach my $file (@ARGV) {
+	green("$file: ");
+	my $cmd = qq{$mplayer -frames 0 -vo null -ao null -identify "$file" 2>/dev/null | grep "Selected video codec"};
+	chomp(my $result = `$cmd` || "(unidentifiable)");
+	$result =~ s/^Selected video codec:\s+//g;
+	yellow("$result\n");
+}
+
+sub green {
+	my $text = shift;
+
+	if ($color) {
+		print color 'bright_green';
+	}
+
+	print $text;
+
+	if ($color) {
+		print color 'reset';
+	}
+}
+
+sub yellow {
+	my $text = shift;
+
+	if ($color) {
+		print color 'bright_yellow';
+	}
+
+	print $text;
+
+	if ($color) {
+		print color 'reset';
+	}
+}

@@ -1,0 +1,160 @@
+#!/usr/bin/perl -w
+
+#------------------------------------------------------------------------------#
+# sayto - A Wall-like command targeted at a specific user that doesn't mess    #
+#         with VIM sessions or other non-pure-shell processes.                 #
+# Usage:  sayto [-a] <username> <message>                                      #
+# Author: Kirsle, http://www.cuvou.com/                                        #
+#------------------------------------------------------------------------------#
+# This program is free software, released under the same terms as Perl itself. #
+#------------------------------------------------------------------------------#
+
+use strict;
+use warnings;
+
+my $to   = undef;
+my $uid  = undef;
+my $msg  = undef;
+my $all  = 0;
+
+# Collect parameters.
+if (join("",@ARGV) =~ /\-+(h|help|\?)/) {
+	die &usage();
+}
+if (scalar(@ARGV) >= 2) {
+	if ($ARGV[0] =~ /^(\-|\-\-)(a|all|f|force)$/i) {
+		$all = 1;
+		shift(@ARGV);
+	}
+	
+	$to  = shift(@ARGV);
+	$msg = join(" ",@ARGV);
+}
+else {
+	die "Usage: sayto [-a] <username> <message>\n"
+		. "For help: sayto --help\n";
+}
+
+# Find the target's UID.
+open (PASSWD, "/etc/passwd") or die "Can't read from /etc/passwd: $!";
+while (<PASSWD>) {
+	my ($user,$undef,$u,$g) = split(/:/, $_);
+	if ($user eq $to) {
+		$uid = $u;
+		last;
+	}
+}
+close (PASSWD);
+unless (defined $uid) {
+	die "Couldn't find UID for user $to!\n";
+}
+
+# Get the processes this user is running.
+my %tty_exclude = ();
+my $ps = `ps aux`;
+foreach my $line (split(/\n/, $ps)) {
+	my ($user,$pid,undef,undef,undef,undef,$tty,undef,undef,undef,$command) = split(/\s+/, $line, 11);
+	if ($user =~ /^\d+$/) {
+		# We got the UID on this line.
+		next unless $user == $uid;
+	}
+	else {
+		# We got the text username.
+		next unless $user eq $to;
+	}
+
+	# Make sure this TTY is in a shell.
+	my @shells = (
+		'bash',			'csh',			'tcsh',
+		'/bin/bash',	'/bin/csh',		'/bin/tcsh',
+		'-bash',		'-csh',			'-tcsh',
+		'sh',
+		'ssh',
+		'-ssh',
+		'sayto',
+		'ps',
+		'/bin/ps',
+	);
+	my $ok = 0;
+	foreach my $sh (@shells) {
+		if ($command =~ /^\Q$sh\E/) {
+			$ok = 1;
+			last;
+		}
+	}
+	if ($command =~ /sayto/i) {
+		$ok = 1;
+	}
+	unless ($ok) {
+		$tty_exclude{$tty} = 1 unless $all;
+	}
+}
+
+# Get all the target user's terminals.
+my $who = `who`;
+my $terms = 0;
+my $skip = 0;
+my @wrote = ();
+foreach my $ln (split(/\n/,$who)) {
+	my ($user,$tty) = split(/\s+/, $ln);
+	if (exists $tty_exclude{$tty} && not $all) {
+		$skip++;
+		next;
+	}
+
+	if (length $to > 8 && length $user == 8) {
+		next unless $to =~ /^$user/;
+	}
+	else {
+		next unless $user eq $to;
+	}
+
+	open (WRITE, "| write $to $tty");
+	print WRITE $msg . "\n";
+	close (WRITE);
+	$terms++;
+	push (@wrote,$tty);
+}
+
+#unlink ("/tmp/sayto.$$");
+
+print "\nBroadcasted message to $to on $terms terminal" . ($terms == 1 ? '' : 's')
+	. " (skipping $skip non-shell TTY" . ($skip == 1 ? '' : 's') . ")\n"
+	. "TTYs Written: " . join(", ",sort @wrote) . "\n"
+	. "TTYs Skipped: " . join(", ",sort keys %tty_exclude) . "\n";
+
+sub usage {
+	return <<EOF;
+NAME
+
+	sayto - Broadcast a message to a single user.
+
+USAGE
+
+	sayto [-a] <username> <message>
+
+DESCRIPTION
+
+	Broadcast a single message to a single user on every terminal
+	that the user is logged in on. It takes care not to broadcast
+	to a TTY that is running anything besides bash, so the broadcasted
+	message won't interfere with vim and other programs.
+
+OPTIONS
+
+	--all
+	-a
+	--force
+	-f
+
+	Forces the broadcast to be sent to all TTYs that the user has
+	open, regardless of what processes are running (so, it will
+	invade on vim sessions as well). This behavior would be exactly
+	like `wall` except for a specific target only.
+
+AUTHOR
+
+	Noah Petherbridge
+	<npetherbridge\@fonality.com>
+EOF
+}

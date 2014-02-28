@@ -1,0 +1,27 @@
+#!/usr/bin/perl
+
+# multistart - Spawn off multiple processes. Useful for a single click
+# "autostart" for all your commonly used programs (IM, e-mail, etc).
+#
+# Usage: multistart <list of processes>
+# Example: multistart thunderbird firefox "synergy -c syn.conf"
+#
+# --Kirsle
+# http://sh.kirsle.net/
+
+use strict;
+use warnings;
+
+scalar(@ARGV) or usage();
+foreach my $proc (@ARGV) {
+	my $fork = fork();
+	if ($fork == 0) {
+		exec($proc);
+	}
+}
+
+sub usage {
+	print "multistart - Spawn off multiple processes.\n"
+		. "Usage: multistart <list of processes>\n";
+	exit(1);
+}
