@@ -1,0 +1,102 @@
+#!/usr/bin/env python
+
+"""dbvault: Dropbox Encrypted Folders
+
+This script makes it easy to set up, mount and unmount encrypted folders for use
+in Dropbox. It depends on fuse-encfs in Linux.
+
+To initialize it in a new Dropbox installation:
+
+    $ dbvault init
+
+To mount later:
+
+    $ dbvault mount
+
+And unmount:
+
+    $ dbvault umount
+
+--Kirsle
+"""
+
+from __future__ import print_function
+import sys
+import os
+import os.path
+import subprocess
+
+# Relevant paths.
+# home      = $HOME
+# dropbox   = $HOME/Dropbox         (your Dropbox folder)
+# encrypted = $HOME/Dropbox/.vault  (your encrypted folder inside Dropbox)
+# mount     = $HOME/Dropbox Vault   (mount point when accessing folder; OUTSIDE of Dropbox root!)
+home      = os.environ["HOME"]
+dropbox   = os.path.join(home, "Dropbox")
+encrypted = os.path.join(dropbox, ".vault")
+mount     = os.path.join(home, "Dropbox Vault")
+
+if len(sys.argv) == 1:
+    print("Usage: dbvault <action>")
+    print("")
+    print("To set up for the first time (and create ~/Dropbox/.vault):")
+    print("    $ dbvault init")
+    print("")
+    print("To mount the encrypted folder (to ~/Dropbox Vault):")
+    print("    $ dbvault mount")
+    print("")
+    print("To unmount the folder when you're done:")
+    print("    $ dbvault umount")
+    print("")
+    print("The paths used by this script:")
+    print("* Your home directory:                 ", home)
+    print("* Your Dropbox folder:                 ", dropbox)
+    print("* Your encrypted folder inside Dropbox:", encrypted)
+    print("* Your mount point OUTSIDE Dropbox:    ", mount)
+    sys.exit(1)
+
+def die(message):
+    print(message)
+    sys.exit(1)
+
+def mkdir():
+    if os.path.isdir(mount):
+        die("Can't create mount point {}: already exists!".format(mount))
+    os.mkdir(mount)
+
+def rmdir():
+    if not os.path.isdir(mount):
+        die("Can't remove mount point {}: doesn't exist!".format(mount))
+    os.rmdir(mount)
+
+action = sys.argv[1]
+if action == "init":
+    # Initialization.
+    if not os.path.isdir(dropbox):
+    	die("Couldn't find your Dropbox folder. Is it at {}?".format(dropbox))
+
+    # Already initialized?
+    if os.path.isdir(encrypted):
+        die("Encrypted folder '{}' already exists. dbvault appears to already be initialized.".format(encrypted))
+
+    print("Initializing encrypted folder. I will now run `encfs` to create the folder.")
+    print("I recommend that you pick the strongest encryption you think you'll need.")
+    mkdir()
+    subprocess.call(["encfs", encrypted, mount])
+
+elif action == "mount":
+    mkdir()
+    result = subprocess.call(["encfs", encrypted, mount])
+    if result != 0:
+        print("An error happened when trying to mount the filesystem.")
+        print("The mount point will be removed.")
+        rmdir()
+
+elif action in ["umount", "unmount"]:
+    subprocess.call(["fusermount", "-u", mount])
+    rmdir()
+
+else:
+    die("Unknown action: {}".format(action))
+
+# vim:expandtab
