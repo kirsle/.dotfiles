@@ -36,6 +36,11 @@ dropbox   = os.path.join(home, "Dropbox")
 encrypted = os.path.join(dropbox, ".vault")
 mount     = os.path.join(home, "Dropbox Vault")
 
+# Test for enc-fs.
+if subprocess.call("which encfs >/dev/null 2>&1", shell=True) != 0:
+    print("You require fuse-encfs to use this script.")
+    sys.exit(1)
+
 if len(sys.argv) == 1:
     print("Usage: dbvault <action>")
     print("")
