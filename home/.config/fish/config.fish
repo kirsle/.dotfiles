@@ -76,7 +76,7 @@ end
 # Color grepping!
 set -gx GREP_COLOR 31
 function grep
-	/bin/grep --exclude=*.min.js --exclude=*.map.js --color=auto $argv
+	/bin/grep --exclude=min.js --color=auto $argv
 end
 
 # ls aliases. Fedora defaults, but here for compatibility
