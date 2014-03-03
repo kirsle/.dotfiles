@@ -3,6 +3,12 @@
 # Kirsle's config.fish
 # Updated: 2014-03-03
 
+function fish_greeting
+	echo -s (set_color FF9900) "-== " (fish --version ^&1) " ==-" (set_color normal)
+	echo -s (set_color FFFF00) "  Date: " (set_color FFFFFF) (date) (set_color normal)
+	echo -s (set_color FFFF00) "Uptime: " (set_color FFFFFF) (uptime) (set_color normal)
+end
+
 # Normalize the $PATH.
 set -gx PATH /usr/sbin /sbin /usr/bin /bin /usr/local/sbin /usr/local/bin $HOME/bin $HOME/go/bin
 
@@ -70,17 +76,17 @@ end
 # Color grepping!
 set -gx GREP_COLOR 31
 function grep
-	/bin/grep --exclude=*.min.js --exclude=*.map.js --color=auto
+	/bin/grep --exclude=*.min.js --exclude=*.map.js --color=auto $argv
 end
 
 # ls aliases. Fedora defaults, but here for compatibility
 function ls
-	/bin/ls --color=auto
+	/bin/ls --color=auto $argv
 end
 function ll
-	/bin/ls -hl --color=auto
+	/bin/ls -hl --color=auto $argv
 end
 
 function ping
-	/bin/ping -c 10
+	/bin/ping -c 10 $argv
 end
