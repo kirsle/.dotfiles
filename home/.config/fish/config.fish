@@ -26,7 +26,7 @@ set -g VIRTUALFISH_COMPAT_ALIASES
 function fish_prompt
 	# VirtualEnv prefix
 	if set -q VIRTUAL_ENV
-		echo -n -s (set_color FF9900) "(" (basename "$VIRTUAL_ENV") ")" (set_color normal) " "
+		echo -n -s (set_color FF9900) "(" (basename "$VIRTUAL_ENV") ")" (set_color normal)
 	end
 
 	set_color --bold 0099FF
