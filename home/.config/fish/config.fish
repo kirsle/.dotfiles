@@ -17,6 +17,11 @@ if test -e ~/.local.fish
 	. ~/.local.fish
 end
 
+# 256 colors
+if test $TERM = "xterm"
+	set -x TERM "xterm-256color"
+end
+
 # VirtualEnv
 set -g VIRTUALFISH_HOME $HOME/.virtualenv
 set -g VIRTUALFISH_COMPAT_ALIASES
