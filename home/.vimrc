@@ -127,3 +127,11 @@ let perl_extended_vars = 1
 " expand tabs for python code
 autocmd BufRead,BufNewFile *.py set expandtab
 
+"""""""""""""""""""""""""""""""""
+""" Compatibility with fish shell
+"""""""""""""""""""""""""""""""""
+
+" https://www.mail-archive.com/fish-users@lists.sourceforge.net/msg01425.html
+if $SHELL =~ 'bin/fish'
+	set shell=/bin/bash
+endif
