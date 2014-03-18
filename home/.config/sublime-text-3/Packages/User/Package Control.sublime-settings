@@ -1,6 +1,7 @@
 {
 	"installed_packages":
 	[
-		"Better CoffeeScript"
+		"Better CoffeeScript",
+		"Sass"
 	]
 }

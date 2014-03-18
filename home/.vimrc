@@ -106,6 +106,8 @@ autocmd BufEnter * :syntax sync fromstart
 noremap <F12> <Esc>:syntax sync fromstart<CR>
 inoremap <F12> <C-o>:syntax sync fromstart<CR>
 
+autocmd BufRead,BufNewFile *.md set ft=markdown
+
 """"""""""""""
 """ Perl stuff
 """"""""""""""
