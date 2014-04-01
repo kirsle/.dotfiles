@@ -1,0 +1,39 @@
+#!/usr/bin/perl
+
+# ipwatch: A script to notify me of client IP addresses.
+#
+# Usage: ipwatch <password>
+#
+# This probably isn't useful to anyone else.
+# --Kirsle
+
+use strict;
+use warnings;
+use LWP::UserAgent;
+
+$ENV{PATH} = "/usr/bin:/bin:/usr/sbin:/sbin";
+
+if (scalar @ARGV == 0) {
+	die "Usage: $0 <password>\n";
+}
+my $password = shift(@ARGV);
+
+my $url = "http://www.kirsle.net/ipaddr.cgi";
+my $ua = LWP::UserAgent->new;
+chomp(my $hostname = `hostname`);
+chomp(my $ifconfig = `ifconfig`);
+
+if (not length $ifconfig) {
+	exec("notify-send 'ifconfig error!'");
+}
+
+my $response = $ua->post($url, {
+	password => $password,
+	hostname => $hostname,
+	ifconfig => $ifconfig,
+});
+if ($response->is_success) {
+	print $response->decoded_content;
+} else {
+	die $response->status_line;
+}
