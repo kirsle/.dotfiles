@@ -95,3 +95,8 @@ end
 function ping
 	/bin/ping -c 10 $argv
 end
+
+# socks tunnel in background
+function socks
+	/usr/bin/ssh -f -N -D 8080 kirsle@kirsle.net
+end
