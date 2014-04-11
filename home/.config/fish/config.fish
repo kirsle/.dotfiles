@@ -12,6 +12,8 @@ end
 # Normalize the $PATH.
 set -gx PATH /usr/sbin /sbin /usr/bin /bin /usr/local/sbin /usr/local/bin $HOME/bin $HOME/go/bin
 
+set -gx EDITOR /usr/bin/vim
+
 # Source local system-specific config.
 if test -e ~/.local.fish
 	. ~/.local.fish
