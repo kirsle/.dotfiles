@@ -106,7 +106,11 @@ autocmd BufEnter * :syntax sync fromstart
 noremap <F12> <Esc>:syntax sync fromstart<CR>
 inoremap <F12> <C-o>:syntax sync fromstart<CR>
 
+" Markdown syntax
 autocmd BufRead,BufNewFile *.md set ft=markdown
+
+" Show tab characters
+set list listchars=tab:\|\ 
 
 """"""""""""""
 """ Perl stuff

@@ -1,0 +1,44 @@
+#!/usr/bin/env python
+
+# git-branch-check: Compare your local git branches with the remote.
+#
+# Usage: git-branch-check [remote]
+#
+# Default remote name is "origin", provide [remote] to change that.
+#
+# --Kirsle
+# https://www.kirsle.net/
+
+import sys
+import subprocess
+
+remote = "origin"
+if len(sys.argv) >= 2:
+    remote = sys.argv[1]
+
+local_branch  = set()
+remote_branch = set()
+
+data = subprocess.check_output(["git", "branch", "-a"])
+for line in data.split("\n"):
+    # Remove the currently active branch indicator and extra spaces.
+    line = line.strip("*").strip()
+    if not len(line): continue
+
+    # Remote branch?
+    if line.startswith("remotes/{}/".format(remote)):
+        line = line.replace("remotes/{}/".format(remote), "")
+        remote_branch.add(line)
+    elif line.startswith("remotes/"):
+        # A different remote?
+        pass
+    else:
+        local_branch.add(line)
+
+# Show comparisons.
+print "Local branches that are not on the remote:"
+for branch in sorted(local_branch):
+    if not branch in remote_branch:
+        print "*", branch
+
+# vim:expandtab
