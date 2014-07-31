@@ -131,7 +131,8 @@ let perl_extended_vars = 1
 """"""""""""""""
 
 " expand tabs for python code
-autocmd BufRead,BufNewFile *.py set expandtab
+" Using editorconfig for this instead!
+"autocmd BufRead,BufNewFile *.py set expandtab
 
 """""""""""""""""""""""""""""""""
 """ Compatibility with fish shell
