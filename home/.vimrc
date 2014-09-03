@@ -110,7 +110,14 @@ inoremap <F12> <C-o>:syntax sync fromstart<CR>
 autocmd BufRead,BufNewFile *.md set ft=markdown
 
 " Show tab characters
-set list listchars=tab:\|\ 
+set list listchars=tab:\|\ ,trail:-,extends:>,precedes:<,nbsp:x
+highlight SpecialKey ctermfg=darkgrey guifg=darkgrey
+
+" Show a divider line at the 80 column mark
+if v:version > 702
+	set colorcolumn=+1
+	highlight ColorColumn ctermbg=darkgrey guibg=darkgrey
+endif
 
 """"""""""""""
 """ Perl stuff
@@ -131,8 +138,7 @@ let perl_extended_vars = 1
 """"""""""""""""
 
 " expand tabs for python code
-" Using editorconfig for this instead!
-"autocmd BufRead,BufNewFile *.py set expandtab
+autocmd BufRead,BufNewFile *.py set expandtab
 
 """""""""""""""""""""""""""""""""
 """ Compatibility with fish shell
