@@ -10,7 +10,7 @@ function fish_greeting
 end
 
 # Normalize the $PATH.
-set -gx PATH /usr/sbin /sbin /usr/bin /bin /usr/local/sbin /usr/local/bin $HOME/bin $HOME/go/bin
+set -gx PATH /usr/sbin /sbin /usr/bin /bin /usr/local/sbin /usr/local/bin $HOME/bin $HOME/go/bin $HOME/android/sdk/platform-tools
 
 set -gx EDITOR /usr/bin/vim
 
