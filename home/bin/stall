@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# stall: Do nothing, for a very long time.
+#
+# --Kirsle
+# http://sh.kirsle.net/
+
+while [ /bin/true ]; do
+	sleep 1337
+done
