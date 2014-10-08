@@ -92,6 +92,17 @@ function title {
 	PROMPT_COMMAND="echo -en \"\033]0;$1\007\""
 }
 
+# Custom git command that overrides $PATH settings
+function git {
+	if [ -x "/usr/local/bin/git" ]; then
+		/usr/local/bin/git $@
+	elif [ -x "/usr/bin/git" ]; then
+		/usr/bin/git $@
+	else
+		echo "git isn't installed"
+	fi
+}
+
 # Case-insensitive searching.
 shopt -s nocaseglob
 
