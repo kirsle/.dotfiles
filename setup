@@ -53,9 +53,13 @@ def crawl(folder):
             continue
 
         # Otherwise it's a file. In install mode, delete the existing file.
-        if install and (os.path.exists(home) or os.path.islink(home)):
-            print("Delete:", home)
-            os.unlink(home)
+        if os.path.exists(home) or os.path.islink(home):
+            if install:
+                print("Delete:", home)
+                os.unlink(home)
+            elif not os.path.islink(home):
+                print("Found existing (non-link file), but not in --install mode:", home)
+                continue
 
         # Already linked?
         if os.path.islink(home):
@@ -72,24 +76,5 @@ def crawl(folder):
         os.symlink(target, home)
 
 crawl(source)
-
-"""for item in os.listdir(source):
-    home   = os.path.join(os.environ.get("HOME", "."), item)
-    target = os.path.join(source, item)
-
-    if install and (os.path.exists(home) or os.path.islink(home)):
-        print("Delete:", home)
-        if os.path.islink(home) or not os.path.isdir(home):
-            os.unlink(home)
-        else:
-            shutil.rmtree(home)
-
-    if os.path.islink(home):
-        print("Already linked:", home)
-        continue
-
-    print("{} -> {}".format(home, target))
-    os.symlink(target, home)
-"""
 
 # vim:expandtab

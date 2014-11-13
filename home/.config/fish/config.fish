@@ -14,11 +14,6 @@ set -gx PATH /usr/sbin /sbin /usr/bin /bin /usr/local/sbin /usr/local/bin $HOME/
 
 set -gx EDITOR /usr/bin/vim
 
-# Source local system-specific config.
-if test -e ~/.local.fish
-	. ~/.local.fish
-end
-
 # 256 colors
 if test $TERM = "xterm"
 	set -x TERM "xterm-256color"
@@ -59,5 +54,10 @@ function fish_title
 	else
 		echo -n -s (whoami) "@" (hostname) ":" (prompt_pwd)
 	end
+end
+
+# Source local system-specific config.
+if test -e ~/.local.fish
+	. ~/.local.fish
 end
 
