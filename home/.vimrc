@@ -1,6 +1,11 @@
 " vimrc, http://sh.kirsle.net/
 " Last Modified 2013/09/27
 
+" https://www.mail-archive.com/fish-users@lists.sourceforge.net/msg01425.html
+if $SHELL =~ 'bin/fish'
+	set shell=/bin/bash
+endif
+
 set encoding=utf8             " Unicode support
 set nocompatible              " use vim defaults
 set background=dark           " my terminal has a black background
@@ -139,12 +144,3 @@ let perl_extended_vars = 1
 
 " expand tabs for python code
 autocmd BufRead,BufNewFile *.py set expandtab
-
-"""""""""""""""""""""""""""""""""
-""" Compatibility with fish shell
-"""""""""""""""""""""""""""""""""
-
-" https://www.mail-archive.com/fish-users@lists.sourceforge.net/msg01425.html
-if $SHELL =~ 'bin/fish'
-	set shell=/bin/bash
-endif
