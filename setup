@@ -14,6 +14,7 @@ import os
 import os.path
 import shutil
 import re
+import subprocess
 
 # Install? (deletes existing files in $HOME).
 install = "--install" in sys.argv
@@ -28,6 +29,15 @@ print("====================")
 print("")
 if install:
     print("* Install mode: will delete files in $HOME and set up symlinks!")
+
+# Set up the submodules first.
+print("Initializing git submodules...")
+os.chdir(basedir)
+subprocess.call(["git", "submodule", "init"])
+subprocess.call(["git", "submodule", "update"])
+os.chdir(homedir)
+print("Submodules updated!")
+print("")
 
 def crawl(folder):
     """Recursively crawl a folder. Directories will be created relative to
