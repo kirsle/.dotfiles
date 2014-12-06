@@ -204,8 +204,9 @@ colorscheme molokai
 " NERD Tree
 "----------
 
-" Auto-open the NERDTree
+" Auto-open the NERDTree, but focus the original file's panel
 autocmd VimEnter * NERDTree
+autocmd VimEnter * wincmd p
 
 " The same, but for when you open vim w/o a specific file
 autocmd StdinReadPre * let s:std_in=1
