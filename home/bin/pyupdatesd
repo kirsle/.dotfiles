@@ -41,7 +41,7 @@ c = dict(
 
     # Command to run to check for available updates, and the expected status
     # code that indicates updates are available.
-    yumcheck = "/usr/bin/yum check-update",    
+    yumcheck = "/usr/bin/yum check-update",
 
     # Path to notify-send (set to None if you don't want notifications)
     notify = "/usr/bin/notify-send",
@@ -56,7 +56,6 @@ c = dict(
 
 import gtk
 import gobject
-import pynotify
 
 import getopt
 import sys
@@ -133,7 +132,7 @@ def main_loop():
     global next_check
     if int(time()) >= next_check:
         status, output = commands.getstatusoutput(c['yumcheck'])
-            
+
         status = status >> 8
 
         say("Executed command:", c['yumcheck'])
