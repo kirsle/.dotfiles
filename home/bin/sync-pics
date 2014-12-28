@@ -1,0 +1,93 @@
+#!/usr/bin/env python
+
+# sync-pics: A script to copy my personal files across various redundant hard
+# drives.
+
+from __future__ import print_function
+from collections import OrderedDict
+import os
+import os.path
+import subprocess
+
+#########################################
+# --- Start Configurable Parameters --- #
+#########################################
+
+# The "master" drive where all source files are synced from.
+MASTER = "Midnight"
+
+# We use rsync to copy files from the master drive to all the slaves. This is
+# the base rsync command used for most copy operations.
+RSYNC = "rsync -avu --delete {source}/ {destination}/"
+
+# The listing of all drives/paths to sync stuff to.
+TARGETS = OrderedDict([
+    # Local hard disks. Just do a simple rsync of all files in their paths.
+    ("Midnight", dict(
+        path = "/mnt/Midnight/Images/Organized",
+    )),
+    ("Cyro", dict(
+        path = "/run/media/noah/Cyro/Pictures/Organized",
+    )),
+    ("Obelisk", dict(
+        path = "/run/media/noah/Obelisk/Redundant/Images/Organized",
+    )),
+    ("Rosewill", dict(
+        path = "/run/media/noah/Rosewill/Redundant/Images/Organized",
+    )),
+
+    # Dropbox volumes.
+    ("Dropbox", dict(
+        path  = "/home/noah/Dropbox/Photos/Organized",
+        rsync = "rsync -avu --delete --exclude .X {source}/ {destination}/",
+    )),
+    ("Vault", dict(
+        path = "/home/noah/Dropbox Vault",
+        rsync = "rsync -avu --delete {source}/.X/ \"{destination}/\"",
+    )),
+])
+
+#######################################
+# --- End Configurable Parameters --- #
+#######################################
+
+def copy_hdds():
+    # Pair up all of the master->slave relationships.
+    pairs = list()
+    for source in TARGETS:
+        if source == MASTER:
+            continue
+
+        pairs.append([MASTER, source])
+
+    # Synchronize!
+    for pair in pairs:
+        source, destination = pair
+        print("\n### Synchronize: {} -> {}".format(source, destination))
+
+        # Get their filesystem paths.
+        source_path      = TARGETS[source]["path"]
+        destination_path = TARGETS[destination]["path"]
+
+        # Is either path not mounted?
+        if not os.path.isdir(source_path):
+            print("Source {} is not mounted.".format(source_path))
+            continue
+        if not os.path.isdir(destination_path):
+            print("Destination {} is not mounted.".format(destination_path))
+            continue
+
+        # Get the rsync command.
+        command = TARGETS[destination].get("rsync", RSYNC)
+
+        # Run it!
+        system(command.format(source=source_path, destination=destination_path))
+
+
+def system(command):
+    print("$", command)
+    subprocess.call(command, shell=True)
+
+
+if __name__ == "__main__":
+    copy_hdds()
