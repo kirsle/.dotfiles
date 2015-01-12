@@ -1,49 +1,68 @@
 #!/usr/bin/perl -w
 
 # flashget - Download Flash videos from any hosting site.
-# Usage: flashget
+# Usage: flashget [output directory default $HOME]
 # Author: Kirsle
 # http://sh.kirsle.net/
 
 # This script doesn't care what your flash player is called. It just looks for
-# any process that owns a /tmp/Flash####### file and copies it.
+# any process that owns a /tmp/Flash####### file and copies it. It works for
+# both the "old style" Netscape Flash plugin (for Firefox and Chromium) and the
+# Pepper API style used in Google Chrome.
 
 use strict;
 use warnings;
 use File::Copy;
 
-my $home = defined $ENV{HOME} ? $ENV{HOME} : ".";
+my $home = shift @ARGV || (defined $ENV{HOME} ? $ENV{HOME} : ".");
 
 print "flashget - Searching for Flash videos to rip. For best results, make sure\n"
 	. "you FULLY BUFFER the video first in your web browser.\n\n";
 
 my $count = 0;
+
+# First, just do a dumb scan of everything in /proc that we have read-access to
+# and look for Flash files belonging to either Chrome or the Firefox-style Flash
+# plugin. Note that the Chrome Flash plugin locks us out of its file descriptors
+# unless we run with root privileges.
 opendir (my $proc, "/proc");
 foreach my $pid (sort { $a <=> $b } (grep(/^\d+$/, readdir($proc)))) {
 	# Skip PID's we can't read from.
 	next unless -r "/proc/$pid/fd";
 
 	# Look for flash videos.
-	my @fd = `ls -l /proc/$pid/fd`;
-	foreach my $line (@fd) {
-		chomp $line;
-		$line =~ s/[\x0D\x0A]//g;
-		next unless length $line;
+	opendir (my $fd, "/proc/$pid/fd");
+	foreach my $id (sort(grep(!/^\./, readdir($fd)))) {
+		my $file = "/proc/$pid/fd/$id"; # Make it an abs path.
+		if (-l $file) {
+			my $link = readlink($file);
 
-		my @parts = split(/\s+/, $line);
-		my $file  = $parts[-2];
-		my $id    = $parts[-4];
-
-		# Looks like Flash?
-		if ($file =~ m{^/tmp/(Flash.*?)$}) {
-			# Copy it.
-			my $dest = "$home/$1.flv";
-			print "Recover from PID $pid: $id -> $dest\n";
-			copy("/proc/$pid/fd/$id", $dest) or print "ERR: Couldn't copy to $dest: $@\n";
-			$count++;
+			# Look for a Flash video link.
+			$link =~ s/\s*\(deleted\)//g; # Remove the " (deleted)" extensions.
+			if ($link =~ m{^/tmp/(Flash.*?)$} || $link =~ m{Shockwave Flash/\.(.+?)$}) {
+				# Copy it.
+				my $dest = "$home/$1.flv";
+				print "Recover from PID $pid: $id -> $dest\n";
+				copy($file, $dest) or print "ERR: Couldn't copy to $dest: $@\n";
+				$count++;
+			}
 		}
 	}
+	closedir($fd);
 }
 closedir ($proc);
 
 print "\nRecovered $count Flash video(s).\n";
+
+# Do a quick check for Google Chrome Flash processes that we didn't manage to
+# get files from, to notify the user that they may want to re-run as root.
+if ($> != 0) {
+	my $ps = `ps aux | grep ppapi | grep -v grep`;
+	if ($ps) {
+		print "I found a few Google Chrome Flash plugins running, but I need\n"
+			. "root permissions to read those files (unless you saw some files\n"
+			. "named like 'com.google' above). Run this script as root to get\n"
+			. "Flash videos out of Google Chrome.\n";
+		print "$ps\n";
+	}
+}
