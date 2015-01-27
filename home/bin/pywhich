@@ -1,0 +1,24 @@
+#!/usr/bin/env python
+
+# pywhich - Find out where a Python module lives.
+#
+# Works like `which` but for Python modules.
+# Usage: pywhich some.module.name
+#
+# --Kirsle
+# http://sh.kirsle.net/
+
+from __future__ import print_function
+from sys import argv, exit
+from importlib import import_module
+
+if len(argv) == 1:
+    print("Usage: {} <module.name>".format(argv[0]))
+    exit(1)
+
+for module in argv[1:]:
+    try:
+        mod = import_module(module)
+        print("{}: {}".format(module, mod.__file__))
+    except ImportError:
+        print("{}: not found".format(module))
