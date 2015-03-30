@@ -1,0 +1,27 @@
+#!/usr/bin/perl
+
+# docker-enter: Get inside a docker container, using nsenter.
+#
+# Usage: docker-enter <container-id>
+#
+# See also:
+# https://jpetazzo.github.io/2014/03/23/lxc-attach-nsinit-nsenter-docker-0-9/
+#
+# --Kirsle
+# http://sh.kirsle.net/
+
+use strict;
+use warnings;
+
+if (scalar(@ARGV) != 1) {
+	die "Usage: $0 <container-id>\n";
+}
+
+my $container_id = shift(@ARGV);
+
+# Get the process ID.
+chomp(my $pid = `docker inspect --format '{{.State.Pid}}' $container_id`);
+die "Couldn't get process ID for that container!\n" unless $pid;
+
+# Enter the docker container.
+exec("nsenter --target $pid --mount --uts --ipc --net --pid");
