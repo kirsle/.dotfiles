@@ -15,7 +15,7 @@ use Tk;
 my $str = join (" ",@ARGV) || 'Preview';
 
 my $mw = MainWindow->new (
-	-title => "Cuvou.com",
+	-title => "Title",
 );
 $mw->optionAdd ('*highlightThickness',0);
 
@@ -28,6 +28,6 @@ $mw->Label (
 		-size   => 12,
 		-family => 'Arial',
 	],
-)->pack (-padx => 5, -pady => 5);
+)->pack (-padx => 15, -pady => 15);
 
 MainLoop;
