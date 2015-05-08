@@ -1,9 +1,7 @@
 # .bashrc
 
 # Kirsle's Global BashRC
-# Updated     2013-05-21
-
-PATH="/usr/sbin:/sbin:/usr/bin:/bin:/usr/local/bin:/usr/local/sbin:$HOME/bin:$HOME/go/bin"
+# Updated     2015-05-07
 
 # Source global definitions
 if [ -f /etc/bashrc ]; then
@@ -13,6 +11,23 @@ fi
 # Source local system-specific config.
 if [ -f ~/.localbashrc ]; then
 	. ~/.localbashrc
+fi
+
+platform="unknown"
+unamestr=`uname`
+if [[ "$unamestr" == "Linux" ]]; then
+	platform="linux"
+elif [[ "$unamestr" == "Darwin" ]]; then
+	platform="darwin"
+fi
+
+# PATH settings.
+export PATH="/usr/sbin:/sbin:/usr/bin:/bin:$HOME/bin:$HOME/go/bin"
+if [[ $platform == "darwin" ]]; then
+	# Prefer /usr/local/bin because homebrew
+	export PATH="/usr/local/bin:$PATH"
+else
+	export PATH="$PATH:/usr/local/bin:/usr/local/sbin"
 fi
 
 # Perlbrew
@@ -126,9 +141,13 @@ alias pgrep='pgrep -l'
 alias less='less -r'
 alias more='less -r' # less is more
 
-# ls aliases (Fedora defaults but defined here for portability)
-alias ls='ls --color=auto'
-alias ll='ls -hl --color=auto'
+# ls aliases (Fedora defaults but here for portability)
+if [[ $platform == "darwin" ]]; then
+	alias ll='ls -hl'
+else
+	alias ls='ls --color=auto'
+	alias ll='ls --color=auto -hl'
+fi
 
 # More aliases!
 alias ping='ping -c 10'
