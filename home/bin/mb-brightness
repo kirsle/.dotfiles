@@ -1,0 +1,147 @@
+#!/usr/bin/env python
+from __future__ import print_function
+
+"""mb-brightness: Adjust brightness on a Macbook Air 2015.
+
+On a Macbook Air 2015 the keyboard brightness controls don't work automatically (as far as Fedora 21 Xfce,
+anyway). A pop-up appears with a brightness bar indicator but the actual brightness doesn't change.
+
+This model uses an Intel graphics card and you can manually adjust the brightness on the CLI, as root,
+by echoing the number into /sys/class/backlight/intel_backlight/brightness. This script is a helper that
+does exactly that.
+
+To set up, you'll need to edit your sudoers file to allow executing this script as root without a password:
+%wheel  ALL=(ALL)  NOPASSWD: /home/noah/bin/mb-brightness
+
+Usage: mb-brightness [--up --down --set %]
+See mb-brightness --help
+
+You can set the brightness to a specific setting (percentage) by doing e.g. `mb-brightness --set 100`
+
+Set this up in your desktop's key bindings. For example I chose Command+< and Command+> to decrease and increase
+brightness, respectively:
+
+* Command+< : sudo /home/noah/bin/mb-brightness --down
+* Command+> : sudo /home/noah/bin/mb-brightness --up
+
+This script has a minimum brightness coded into it so that the brightness won't drop below 5%. If the brightness
+gets set to 0% the backlight gets completely turned off, which isn't fun for anybody.
+
+--Kirsle
+http://sh.kirsle.net
+"""
+
+# Device file paths. Edit this script if these differ on your system.
+BRIGHTNESS     = "/sys/class/backlight/intel_backlight/brightness"
+MAX_BRIGHTNESS = "/sys/class/backlight/intel_backlight/max_brightness"
+
+# Set a minimum brightness level, because at 0% brightness the backlight turns completely off.
+MIN_BRIGHTNESS = 5
+
+import os
+import sys
+import argparse
+import logging
+
+logging.basicConfig()
+logger = logging.getLogger("mb-brightness")
+logger.setLevel(logging.INFO)
+
+def main(args):
+    """Main function."""
+    if args.debug:
+        logger.setLevel(logging.DEBUG)
+
+    # Input validation.
+    if args.up and args.down:
+        die("--up and --down are mutually exclusive; use only one!")
+    if args.interval < 0 or args.interval > 100:
+        die("Interval must be a valid percentage between 0 and 100.")
+    if args.set is not None and args.set < 0 or args.set > 100:
+        die("Percentage for --set must be between 0 and 100.")
+
+    # Got root?
+    if os.geteuid() != 0:
+        die("Got root?")
+
+    # Get the max brightness.
+    maximum = cat(MAX_BRIGHTNESS)
+    logger.debug("Maximum brightness: {}".format(maximum))
+
+    # The value we're setting it to.
+    percent = 50
+
+    # Have a hard value to set to?
+    if args.set:
+        percent = args.set
+    else:
+        # Moving it by an interval. First calculate the current brightness percentage.
+        brightness = cat(BRIGHTNESS)
+        percent = int((float(brightness) / float(maximum)) * 100)
+        logger.debug("Current brightness percent: {}%".format(percent))
+
+        # Bump the percentage and cap the result.
+        if args.up:
+            percent += args.interval
+        elif args.down:
+            percent -= args.interval
+        if percent < 0: percent = 0
+        if percent > 100: percent = 100
+
+    # Set the brightness.
+    set_brightness(percent, maximum)
+
+
+def set_brightness(percent, maximum):
+    """Write the brightness as a percentage (0-100)."""
+    if percent < MIN_BRIGHTNESS:
+        percent = MIN_BRIGHTNESS
+
+    brightness = int(float(maximum) * (float(percent) / 100))
+    logger.debug("Setting brightness to {} ({}%)".format(brightness, percent))
+    logger.debug("Write {} > {}".format(brightness, BRIGHTNESS))
+    fh = open(BRIGHTNESS, "w")
+    fh.write(str(brightness))
+    fh.close()
+
+
+def cat(file):
+    """Read an integer value from a file."""
+    logger.debug("Read value from: {}".format(file))
+    fh = open(file, "r")
+    value = fh.read().strip()
+    fh.close()
+    return int(value)
+
+
+def die(message):
+    """Print a message and exit with a non-zero code."""
+    print(message)
+    sys.exit(1)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Macbook Brightness Helper")
+    parser.add_argument("--debug",
+        help="Turn on verbose logging, for debugging.",
+        action="store_true",
+    )
+    parser.add_argument("--interval", "-i",
+        help="The brightness percentage interval, default 5.",
+        type=int,
+        default=5,
+    )
+    parser.add_argument("--up", "-u",
+        help="Increase the brightness by the set interval.",
+        action="store_true",
+    )
+    parser.add_argument("--down", "-d",
+        help="Decrease the brightness by the set interval.",
+        action="store_true",
+    )
+    parser.add_argument("--set", "-s",
+        help="Set the brightness to a specific percentage level (0-100).",
+        type=int,
+    )
+    args = parser.parse_args()
+    main(args)
