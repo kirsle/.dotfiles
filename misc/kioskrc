@@ -1,0 +1,4 @@
+# put this in /etc/xdg/xfce4/kiosk/kioskrc
+# turns off session saving in XFCE
+[xfce4-session]
+SaveSession=NONE

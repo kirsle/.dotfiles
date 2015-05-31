@@ -41,7 +41,7 @@ c = dict(
 
     # Command to run to check for available updates, and the expected status
     # code that indicates updates are available.
-    yumcheck = "/usr/bin/yum check-update",
+    yumcheck = "/usr/bin/dnf check-update",
 
     # Path to notify-send (set to None if you don't want notifications)
     notify = "/usr/bin/notify-send",
