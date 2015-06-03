@@ -24,8 +24,13 @@ set -g VIRTUALFISH_HOME $HOME/.virtualenv
 set -g VIRTUALFISH_COMPAT_ALIASES
 . ~/.config/fish/virtual.fish
 
+# Git repo branches
+function git_branch
+	git branch 2>/dev/null | grep -v '^[^*]' | perl -pe 's/^\*\s+//g'
+end
+
 # Shell prompt
-function fish_prompt
+function base_prompt
 	# VirtualEnv prefix
 	if set -q VIRTUAL_ENV
 		echo -n -s (set_color FF9900) "(" (basename "$VIRTUAL_ENV") ")" (set_color normal)
@@ -42,9 +47,20 @@ function fish_prompt
 	echo -n " "
 	set_color 00FF00
 	echo -n (prompt_pwd)
+
+	# git branch
+	set branch (git_branch)
+	if test -n "$branch"
+		set_color 00FFFF
+		echo -n " ($branch)"
+	end
+
 	set_color 0099FF
 	echo -n "]\$ "
 	set_color normal
+end
+function fish_prompt
+	echo -n (base_prompt)
 end
 
 # Title bar
@@ -55,6 +71,7 @@ function fish_title
 		echo -n -s (whoami) "@" (hostname) ":" (prompt_pwd)
 	end
 end
+
 
 # Source local system-specific config.
 if test -e ~/.local.fish
