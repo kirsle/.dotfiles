@@ -80,12 +80,14 @@ elif [ "$TERM" = 'cygwin' ]; then
 fi
 
 # Custom bash prompt.
-if [ "$ENLIGHTENED" = '1' ]; then
-	if [ `hostname` = 'fubar' ] || [ `hostname` = 'yakko' ]; then
-		export PS1="\[$CYAN\]\t \[$LIME\][\[$YELLOW\]\u\[$RED\]@\[$YELLOW\]\h \[$LIME\]\W\[$LIME\]]\[$BLUE\]\\$ \[$NC\]"
-	else
-		export PS1="\[$BOLD$BLUE\][\[$MAGENTA\]\u\[$BLUE\]@\[$MAGENTA\]\h \[$LIME\]\W\[$BLUE\]]\\$ \[$NC\]"
+git_branch() {
+	branch=`git branch 2> /dev/null | sed -e '/^[^*]/d' | perl -pe 's/^\*\s+//g'`
+	if [ "$branch" != '' ]; then
+		echo -n " ($branch)"
 	fi
+}
+if [ "$ENLIGHTENED" = '1' ]; then
+	export PS1="\[$BOLD$BLUE\][\[$MAGENTA\]\u\[$BLUE\]@\[$MAGENTA\]\h \[$LIME\]\W\[$CYAN\]\$(git_branch)\[$BLUE\]\[$BLUE\]]\\$ \[$NC\]"
 fi
 
 # For non-Fedora environments be sure the PROMPT_COMMAND sets the title bar.
