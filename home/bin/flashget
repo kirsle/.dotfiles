@@ -39,7 +39,7 @@ foreach my $pid (sort { $a <=> $b } (grep(/^\d+$/, readdir($proc)))) {
 
 			# Look for a Flash video link.
 			$link =~ s/\s*\(deleted\)//g; # Remove the " (deleted)" extensions.
-			if ($link =~ m{^/tmp/(Flash.*?)$} || $link =~ m{Shockwave Flash/\.(.+?)$}) {
+			if ($link =~ m{^/tmp/((?:Flash|FreshTemp).*?)$} || $link =~ m{Shockwave Flash/\.(.+?)$}) {
 				# Copy it.
 				my $dest = "$home/$1.flv";
 				print "Recover from PID $pid: $id -> $dest\n";
