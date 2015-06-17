@@ -23,6 +23,7 @@ set showcmd                   " display incomplete commands
 set ttyfast                   " smoother changes
 set autowrite                 " automatic saving when quitting and switching buffer
 set autoread                  " automatic read when file is modified from outside
+set modeline                  " process modelines in files
 syntax on                     " syntax highlighting
 
 " Leader Key
