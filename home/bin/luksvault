@@ -1,0 +1,190 @@
+#!/usr/bin/env python3
+
+"""luksvault: Encrypted Disk Images via Luks.
+
+This script makes it easy to set up, mount and unmount encrypted disk images.
+It uses an ext4 filesystem by default; this can be overridden with --mkfs,
+for example `--mkfs mkfs.vfat`
+
+Usage: luksvault /path/to/disk.img /mnt/point
+
+If the image doesn't exist, you'll be prompted to set it up. If it does exist,
+it will be mounted. The setup phase takes the longest and asks for passwords the
+most often, but once set up you'll only need to enter the disk image password
+(and potentially your sudo password).
+
+To unmount: luksvault -u /path/to/disk.img /mnt/point
+
+See `luksvault --help` for additional options.
+
+--Kirsle
+http://sh.kirsle.net/
+"""
+
+import sys
+import os
+import argparse
+import logging
+import subprocess
+
+logging.basicConfig(format="[%(levelname)s] %(message)s")
+console = logging.getLogger("luksvault")
+console.setLevel(logging.INFO)
+
+def main(args):
+    if args.debug:
+        console.setLevel(logging.DEBUG)
+
+    # Test for cryptsetup.
+    if subprocess.call("which cryptsetup >/dev/null 2>&1", shell=True) != 0:
+        print("You require cryptsetup to use this script.")
+        sys.exit(1)
+
+    # Get the base name of the file. We remove any file extensions from it,
+    # and strip dots from it (so if they point to a dotfile like ~/.vault.img
+    # the basename becomes "vault")
+    console.debug("File path given via CLI: {}".format(args.image))
+    basename = os.path.basename(args.image).strip(".").split(".")[0]
+    console.debug("Base name: {}".format(basename))
+    if len(basename) == 0:
+        print("Bad file name for disk image.")
+
+    # Mount point exists?
+    if not os.path.isdir(args.mount):
+        console.error("Mount point does not exist: {}".format(args.mount))
+        sys.exit(1)
+
+    # Mapper name?
+    mapper = "luksvault-{}".format(basename)
+    if args.name:
+        mapper = args.name
+
+    # Does the image exist?
+    if not os.path.isfile(args.image):
+        init_image(args, mapper)
+        sys.exit(0)
+
+    # Unmounting it?
+    if args.unmount:
+        unmount(args, mapper)
+        sys.exit(0)
+
+    # Mount it.
+    mount(args, mapper)
+    sys.exit(0)
+
+def init_image(args, mapper):
+    """Initialize the disk image."""
+    print("The disk image {} does not yet exist.".format(args.image))
+    answer = input("Create it? [yN] ")
+    if answer != "y":
+        sys.exit(1)
+
+    # Do we have a size?
+    size = args.size
+    if size is None:
+        try:
+            size = int(
+                input("How big do you want the image to be, in MB? ")
+            )
+        except:
+            print("Invalid size; a number was expected.")
+            sys.exit(1)
+
+    # Create it quickly?
+    if args.fast:
+        print("Creating fast disk image via fallocate...")
+        subprocess.call(["fallocate", "-l", "{}M".format(size), args.image])
+    else:
+        print("Creating disk image from /dev/urandom...")
+        subprocess.call(["dd", "if=/dev/urandom",
+                               "of={}".format(args.image),
+                               "bs=1M",
+                               "count={}".format(size)])
+
+    # Set up Luks
+    print("Setting up the Luks format on this disk image...")
+    subprocess.call(["cryptsetup", "-y", "luksFormat", args.image])
+    print("REMEMBER: If you lose your password, you won't be able to recover "
+        "it!")
+
+    print("Opening the disk image with Luks and formatting it...")
+    subprocess.call(["sudo", "cryptsetup", "luksOpen", args.image, mapper])
+    if not os.path.exists("/dev/mapper/{}".format(mapper)):
+        console.error("The file /dev/mapper/{} isn't there like I "
+            "expected!".format(mapper))
+        sys.exit(1)
+    subprocess.call("sudo {} /dev/mapper/{}".format(args.mkfs, mapper),
+        shell=True)
+
+    # Mount it.
+    mount(args, mapper, skip_luks=True)
+
+def mount(args, mapper, skip_luks=False):
+    """Mount it."""
+
+    # Luks setup.
+    if not skip_luks:
+        subprocess.call(["sudo", "cryptsetup", "luksOpen", args.image, mapper])
+
+    # Mount it.
+    subprocess.call(["sudo", "mount",
+        "/dev/mapper/{}".format(mapper), args.mount])
+
+def unmount(args, mapper):
+    """Unmount and tear down Luks."""
+    print("Unmounting encrypted volume...")
+    subprocess.call(["sudo", "umount", args.mount])
+    print("Closing the LUKS context...")
+    subprocess.call(["sudo", "cryptsetup", "luksClose", mapper])
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="luksvault")
+    parser.add_argument(
+        "--unmount", "-u",
+        action="store_true",
+        help="Unmount the volume.",
+    )
+    parser.add_argument(
+        "--name", "-n",
+        type=str,
+        help="The mapper name to use for Luks. Default name is 'luksvault-"
+            "<basename-of-file>'",
+    )
+    parser.add_argument(
+        "--size", "-s",
+        type=int,
+        help="Size of the disk image, in megabytes (e.g. 1024)."
+    )
+    parser.add_argument(
+        "--fast",
+        action="store_true",
+        help="Create the disk image quickly (fallocate), but insecurely. "
+            "It's recommended NOT to use this option (the default is to fully "
+            "allocate the disk image from /dev/urandom).",
+    )
+    parser.add_argument(
+        "--mkfs",
+        type=str,
+        default="mkfs.ext4 -j",
+        help="The mkfs command prefix you want to use with the encrypted "
+            "disk image (default is: mkfs.ext4 -j)",
+    )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug mode (verbose logging).",
+    )
+    parser.add_argument(
+        "image",
+        type=str,
+        help="Path to disk image file.",
+    )
+    parser.add_argument(
+        "mount",
+        type=str,
+        help="Path to mount the disk image to.",
+    )
+    args = parser.parse_args()
+
+    main(args)
