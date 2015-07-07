@@ -5,9 +5,15 @@
 # Updated: 2015-07-07
 ###
 
-export LANG=en_US.UTF-8       # Unicode
-setopt prompt_subst           # Allow for dynamic prompts
-autoload -U colors && colors  # Get color aliases
+export LANG=en_US.UTF-8           # Unicode
+setopt prompt_subst               # Allow for dynamic prompts
+autoload -U colors && colors      # Get color aliases
+autoload -U compinit && compinit  # Better tab completion
+export HISTSIZE=2000              # History settings
+export HISTFILE="$HOME/.history"
+export SAVEHIST=$HISTSIZE
+setopt hist_ignore_all_dups
+setopt hist_ignore_space
 
 # 256 colors
 [[ "$TERM" == "xterm" ]] && export TERM=xterm-256color
@@ -65,6 +71,14 @@ local base_prompt="${base_prompt}${git_prompt}"
 
 # End the base prompt
 local base_prompt="${base_prompt}%{$blue%}]%# %{%f%}"
+
+###
+# Set terminal titles automatically
+###
+
+precmd() {
+	print -Pn "\e]0;%n@${PROMPT_HOSTNAME}:%~\a"
+}
 
 ###############################################################################
 # zsh plugins                                                                 #
