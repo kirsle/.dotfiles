@@ -28,3 +28,6 @@
 [submodule "home/.vim/bundle/editorconfig-vim"]
 	path = home/.vim/bundle/editorconfig-vim
 	url = https://github.com/editorconfig/editorconfig-vim
+[submodule "zsh/zgen"]
+	path = zsh/zgen
+	url = https://github.com/tarjoilija/zgen
