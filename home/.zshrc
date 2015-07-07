@@ -12,10 +12,6 @@ autoload -U colors && colors  # Get color aliases
 # 256 colors
 [[ "$TERM" == "xterm" ]] && export TERM=xterm-256color
 
-# Load color aliases
-setopt prompt_subst
-autoload -U colors && colors
-
 # Normalize the PATH
 export PATH="/usr/sbin:/sbin:/usr/bin:/bin:/usr/local/sbin:/usr/local/bin:${HOME}/bin:${HOME}/go/bin:${HOME}/android/sdk/platform-tools"
 export EDITOR="/usr/bin/vim"
