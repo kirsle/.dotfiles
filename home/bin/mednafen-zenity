@@ -15,7 +15,7 @@ chomp $rom;
 print "Selected: $rom\n";
 
 # A selection?
-if (defined $rom && $rom =~ /\.(gb|gbc|gba|nes)/i) {
+if (defined $rom && $rom =~ /\.(gb|gbc|gba|nes|smc|sfc)/i) {
 	if (-f $rom) {
 		# Launch Mednafen.
 		exec(

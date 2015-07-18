@@ -62,6 +62,10 @@ WHITE='\e[1;37m'
 BOLD='\e[1m'
 NC='\e[0m'              # No Color
 
+# Some 256-colors colors
+LBLUE="\e[38;5;39m"
+PINK="\e[38;5;213m"
+
 function showcolors() {
 	echo -e "$BLACK BLACK $NAVY NAVY $GREEN GREEN $TEAL TEAL"
 	echo -e "$MAROON MAROON $PURPLE PURPLE $BROWN BROWN $SILVER SILVER"
@@ -87,7 +91,7 @@ git_branch() {
 	fi
 }
 if [ "$ENLIGHTENED" = '1' ]; then
-	export PS1="\[$BOLD$BLUE\][\[$MAGENTA\]\u\[$BLUE\]@\[$MAGENTA\]\h \[$LIME\]\W\[$CYAN\]\$(git_branch)\[$BLUE\]\[$BLUE\]]\\$ \[$NC\]"
+	export PS1="\[$BOLD$LBLUE\][\[$PINK\]\u\[$LBLUE\]@\[$PINK\]\h \[$LIME\]\W\[$CYAN\]\$(git_branch)\[$LBLUE\]\[$LBLUE\]]\\$ \[$NC\]"
 fi
 
 # For non-Fedora environments be sure the PROMPT_COMMAND sets the title bar.
