@@ -20,7 +20,7 @@ if test $TERM = "xterm"
 end
 
 # VirtualEnv
-set -g VIRTUALFISH_HOME $HOME/.virtualenv
+set -g VIRTUALFISH_HOME $HOME/.virtualenvs
 set -g VIRTUALFISH_COMPAT_ALIASES
 . ~/.config/fish/virtual.fish
 

@@ -24,7 +24,7 @@ export PATH="/usr/sbin:/sbin:/usr/bin:/bin:/usr/local/sbin:/usr/local/bin:${HOME
 export EDITOR="/usr/bin/vim"
 
 # Virtualenv
-export WORKON_HOME=~/.virtualenv
+export WORKON_HOME=~/.virtualenvs
 
 # Reload zshrc
 alias rezsh="source ${HOME}/.zshrc"

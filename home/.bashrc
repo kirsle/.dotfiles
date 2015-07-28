@@ -37,7 +37,7 @@ if [ -f /opt/perl5/etc/bashrc ]; then
 fi
 
 # Virtualenv
-export WORKON_HOME=~/.virtualenv
+export WORKON_HOME=~/.virtualenvs
 if [ -f /usr/bin/virtualenvwrapper.sh ]; then
 	source /usr/bin/virtualenvwrapper.sh
 fi
