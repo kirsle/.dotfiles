@@ -64,7 +64,6 @@ git_branch() {
 		local res=" ($res)"
 	fi
 	echo $res
-	return $res
 }
 
 local git_prompt='%{$cyan%}$(git_branch)%{$reset_color%}'
