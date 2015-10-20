@@ -26,6 +26,9 @@ export EDITOR="/usr/bin/vim"
 # Virtualenv
 export WORKON_HOME=~/.virtualenvs
 
+# Go
+export GOPATH="$HOME/go"
+
 # Reload zshrc
 alias rezsh="source ${HOME}/.zshrc"
 

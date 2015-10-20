@@ -46,6 +46,12 @@ TARGETS = OrderedDict([
         path = "/home/noah/Dropbox Vault",
         rsync = "rsync -avu --delete {source}/.X/ \"{destination}/\"",
     )),
+
+    # Owncloud backup.
+    ("Owncloud", dict(
+        path  = "/home/noah/ownCloud/Photos/Organized",
+        rsync = "rsync -avu --delete --exclude .X {source}/ {destination}/",
+    )),
 ])
 
 #######################################

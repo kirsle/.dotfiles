@@ -1,0 +1,53 @@
+#!/usr/bin/env python3
+
+"""backup-check: Periodically compare checksums of backups in multiple
+locations. It's mainly to do a weekly check of all my backup locations and
+identify bit rot before it's too late.
+
+Install via `crontab -e`:
+0 2 * * 0 /home/noah/bin/backup-check
+
+--Kirsle
+http://sh.kirsle.net/
+"""
+
+import codecs
+import os.path
+import subprocess
+
+# Directories to compare with each other.
+DIRECTORIES = [
+    "/mnt/Midnight/Images/Organized",
+    "/run/media/noah/Cyro/Pictures/Organized",
+    "/run/media/noah/Obelisk/Redundant/Images/Organized",
+    "/home/noah/Dropbox/Photos/Organized",
+    "/home/noah/ownCloud/Photos/Organized",
+]
+ERROR_OUT = "/home/noah/Desktop/Checksum Error.txt"
+
+def main():
+    # First available disk becomes the common denominator.
+    master = None
+    for disk in DIRECTORIES:
+        if os.path.isdir(disk):
+            if master is None:
+                print("Master disk chosen as:", disk)
+                master = disk
+
+            if disk != master:
+                # Do the comparison.
+                print("Compare {} <=> {}".format(master, disk))
+                out = subprocess.check_output(["diff", "-aqr", master, disk])
+                if len(out):
+                    # Problem!
+                    error(out)
+                    break
+
+def error(out):
+    """Error, panic!"""
+    fh = codecs.open(ERROR_OUT, "w", "utf-8")
+    fh.write(out.decode("utf-8"))
+    fh.close()
+
+if __name__ == "__main__":
+    main()
