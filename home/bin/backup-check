@@ -5,7 +5,7 @@ locations. It's mainly to do a weekly check of all my backup locations and
 identify bit rot before it's too late.
 
 Install via `crontab -e`:
-0 2 * * 0 /home/noah/bin/backup-check
+0 2 * * 0 /home/kirsle/bin/backup-check
 
 --Kirsle
 http://sh.kirsle.net/
@@ -18,10 +18,9 @@ import subprocess
 # Directories to compare with each other.
 DIRECTORIES = [
     "/mnt/Midnight/Images/Organized",
-    "/run/media/noah/Cyro/Pictures/Organized",
-    "/run/media/noah/Obelisk/Redundant/Images/Organized",
-    "/home/noah/Dropbox/Photos/Organized",
-    "/home/noah/ownCloud/Photos/Organized",
+    "/run/media/kirsle/Cyro/Pictures/Organized",
+    "/run/media/kirsle/Obelisk/Redundant/Images/Organized",
+    "/home/kirsle/Dropbox/Photos/Organized",
 ]
 ERROR_OUT = "/home/noah/Desktop/Checksum Error.txt"
 

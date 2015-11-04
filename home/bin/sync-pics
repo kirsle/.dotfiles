@@ -27,29 +27,29 @@ TARGETS = OrderedDict([
         path = "/mnt/Midnight/Images/Organized",
     )),
     ("Cyro", dict(
-        path = "/run/media/noah/Cyro/Pictures/Organized",
+        path = "/run/media/kirsle/Cyro/Pictures/Organized",
     )),
     ("Obelisk", dict(
-        path = "/run/media/noah/Obelisk/Redundant/Images/Organized",
+        path = "/run/media/kirsle/Obelisk/Redundant/Images/Organized",
         rsync = "rsync -avu --no-p --delete {source}/ \"{destination}/\"",
     )),
     ("Rosewill", dict(
-        path = "/run/media/noah/Rosewill/Redundant/Images/Organized",
+        path = "/run/media/kirsle/Rosewill/Redundant/Images/Organized",
     )),
 
     # Dropbox volumes.
     ("Dropbox", dict(
-        path  = "/home/noah/Dropbox/Photos/Organized",
+        path  = "/home/kirsle/Dropbox/Photos/Organized",
         rsync = "rsync -avu --delete --exclude .X {source}/ {destination}/",
     )),
     ("Vault", dict(
-        path = "/home/noah/Dropbox Vault",
+        path = "/home/kirsle/Dropbox Vault",
         rsync = "rsync -avu --delete {source}/.X/ \"{destination}/\"",
     )),
 
     # Owncloud backup.
     ("Owncloud", dict(
-        path  = "/home/noah/ownCloud/Photos/Organized",
+        path  = "/home/kirsle/ownCloud/Photos/Organized",
         rsync = "rsync -avu --delete --exclude .X {source}/ {destination}/",
     )),
 ])

@@ -1,0 +1,113 @@
+#!/usr/bin/env python
+
+"""
+Installs my favorite programs on a new Fedora system.
+
+Fonts:
+    - Microsoft core fonts
+    - Emoji fonts
+
+Apps:
+    - Firefox, Thunderbird
+    - Eye of Gnome, File Roller, Gedit, GIMP
+    - Banshee
+
+Dev stuff:
+    - zsh
+    - python-virtualenvwrapper
+    - git
+
+Filesystems:
+    - fuse-encfs
+    - fuse-exfat
+    - gvfs-mtp
+
+Misc:
+    - Video codecs
+    - h264 support for Firefox HTML5 videos
+    - VLC Media Player
+
+Themes:
+    - Bluecurve Cursor Theme
+    - Solar Plymouth Theme
+
+--Kirsle
+http://sh.kirsle.net/
+"""
+
+import subprocess
+
+class Application(object):
+    def __init__(self):
+        self.to_install = []
+
+    def main(self):
+        """Main entry point of the app."""
+
+        # Update first.
+        self.shell("sudo dnf -y update")
+
+        # The latest RPM Fusion.
+        if not self.test("rpm -q rpmfusion-free-release"):
+            self.shell("sudo dnf install --nogpgcheck http://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm http://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm")
+
+        # Microsoft core fonts and Emoji support.
+        if not self.test("rpm -q msttcore-fonts"):
+            self.shell("sudo dnf install http://rpm.kirsle.net/any/rpm/msttcore-fonts-2.0-3.noarch.rpm")
+        self.install("gdouros-symbola-fonts")
+
+        # Themes
+        self.install("bluecurve-cursor-theme")
+        if not self.test("rpm -q plymouth-theme-solar"):
+            self.install("plymouth-theme-solar")
+            self.commit()
+            self.shell("sudo plymouth-set-default-theme solar && sudo dracut -f")
+
+        # My favorite desktop apps.
+        self.install("firefox", "thunderbird", "eog", "file-roller",
+            "gedit", "gimp", "libreoffice", "banshee")
+
+        # Development stuff.
+        self.install("git", "zsh", "python-virtualenvwrapper")
+
+        # Filesystems
+        self.install("fuse-encfs", "fuse-exfat", "gvfs-mtp")
+
+        # Codecs and plugins and Firefox h264 video support
+        self.install("gstreamer1-libav", "gstreamer1-vaapi",
+            "gstreamer1-plugins-good", "gstreamer1-plugins-ugly",
+            "gstreamer1-plugins-good-extras", "gstreamer1-plugins-bad-free",
+            "gstreamer1-plugins-bad-freeworld", "vlc")
+
+        self.commit()
+
+    def install(self, *rpm):
+        """Name an rpm I wanna install. Checks if it's already installed first,
+        then adds it to the self.to_install list."""
+        for item in rpm:
+            if not self.test("rpm -q {}".format(item)):
+                print("* To install: {}".format(item))
+                self.to_install.append(item)
+
+    def commit(self):
+        """Install the pending RPMs."""
+        if len(self.to_install) > 0:
+            print("Installing...")
+            self.shell("sudo dnf -y install {}".format(" ".join(self.to_install)))
+            self.to_install = []
+
+    def shell(self, cmd):
+        print("EXECUTE: {}".format(cmd))
+        subprocess.call(cmd, shell=True)
+
+    def test(self, command):
+        """Test if a command exits successfully."""
+        try:
+            subprocess.check_call("{} >/dev/null 2>&1".format(command), shell=True)
+            return True
+        except subprocess.CalledProcessError:
+            return False
+
+if __name__ == "__main__":
+    app = Application()
+    app.main()
