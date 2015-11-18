@@ -27,14 +27,14 @@ TARGETS = OrderedDict([
         path = "/mnt/Midnight/Images/Organized",
     )),
     ("Cyro", dict(
-        path = "/run/media/kirsle/Cyro/Pictures/Organized",
+        path = "/media/kirsle/Cyro/Pictures/Organized",
     )),
     ("Obelisk", dict(
-        path = "/run/media/kirsle/Obelisk/Redundant/Images/Organized",
+        path = "/media/kirsle/Obelisk/Redundant/Images/Organized",
         rsync = "rsync -avu --no-p --delete {source}/ \"{destination}/\"",
     )),
     ("Rosewill", dict(
-        path = "/run/media/kirsle/Rosewill/Redundant/Images/Organized",
+        path = "/media/kirsle/Rosewill/Redundant/Images/Organized",
     )),
 
     # Dropbox volumes.
