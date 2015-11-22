@@ -15,12 +15,17 @@ export SAVEHIST=$HISTSIZE
 setopt hist_ignore_all_dups
 setopt hist_ignore_space
 setopt inc_append_history
+setopt nobeep
 
 # 256 colors
 [[ "$TERM" == "xterm" ]] && export TERM=xterm-256color
 
 # Normalize the PATH
-export PATH="/usr/sbin:/sbin:/usr/bin:/bin:/usr/local/sbin:/usr/local/bin:${HOME}/bin:${HOME}/go/bin:${HOME}/android/sdk/platform-tools"
+CORE_PATH="/usr/sbin:/sbin:/usr/bin:/bin"
+USR_PATH="/usr/local/sbin:/usr/local/bin:${HOME}/bin:${HOME}/go/bin:${HOME}/android/sdk/platform-tools"
+if [[ `uname` == "Linux" ]] then export PATH="${CORE_PATH}:${USR_PATH}"
+else export PATH="${USR_PATH}:${CORE_PATH}"
+fi
 export EDITOR="/usr/bin/vim"
 
 # Virtualenv
@@ -89,8 +94,11 @@ precmd() {
 
 alias vi="vim"
 alias grep="grep --exclude=min.js --color=auto"
-alias ls="ls --color=auto"
 alias ll="ls -l"
+
+if [[ `uname` == 'Linux' ]] then
+	alias ls="ls --color=auto"
+fi
 
 ###############################################################################
 # zsh plugins                                                                 #
