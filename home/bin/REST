@@ -1,4 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+
+from __future__ import print_function
 
 """REST: Simple command line interface to testing RESTful services.
 
@@ -83,18 +85,18 @@ def do_http(args):
         data=args.data,
     )
 
-    print args.method, args.url, result.status_code
+    print(args.method, args.url, result.status_code)
 
     # JSON response?
     try:
         parsed = result.json
-        print json.dumps(parsed,
+        print(json.dumps(parsed,
             sort_keys=True,
             indent=4,
             separators=(',', ': '),
-        )
+        ))
     except:
-        print result.text
+        print(result.text)
 
 
 def strings_to_dict(strings, separator):
