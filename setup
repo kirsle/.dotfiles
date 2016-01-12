@@ -6,9 +6,10 @@ Usage: setup [--install]
 
 This will create symlinks in $HOME for every file listed in ./home in this
 repository. It will NOT delete existing files in $HOME; use the --install
-option to delete existing files."""
+option to delete existing files.
 
-from __future__ import print_function
+This script should work in any version of Python above v2.5"""
+
 import sys
 import os
 import os.path
@@ -49,7 +50,7 @@ def crawl(folder):
 
         # Remove the source dir prefix from it to get the path relative
         # to the "./home" folder, then use that for $HOME.
-        path   = re.sub(r'^{}/'.format(source), '', target)
+        path   = re.sub(r'^%s/' % source, '', target)
         home   = os.path.join(homedir, path)
 
         # If the target is a directory, make sure it exists relative to $HOME.
@@ -82,7 +83,7 @@ def crawl(folder):
                 os.unlink(home)
 
         # Link it.
-        print("Link: {} -> {}".format(home, target))
+        print("Link: %s -> %s" % (home, target))
         os.symlink(target, home)
 
 crawl(source)
