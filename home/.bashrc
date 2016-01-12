@@ -8,11 +8,6 @@ if [ -f /etc/bashrc ]; then
 	. /etc/bashrc
 fi
 
-# Source local system-specific config.
-if [ -f ~/.localbashrc ]; then
-	. ~/.localbashrc
-fi
-
 platform="unknown"
 unamestr=`uname`
 if [[ "$unamestr" == "Linux" ]]; then
@@ -190,4 +185,9 @@ if [ -e ".xterm256" ]; then
 		TERMCAP=$(echo $TERMCAP | sed -e 's/Co#8/Co#256/g')
 		export TERMCAP
 	fi
+fi
+
+# Source local system-specific config.
+if [ -f ~/.localbashrc ]; then
+	. ~/.localbashrc
 fi
