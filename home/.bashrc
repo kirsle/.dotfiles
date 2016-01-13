@@ -78,6 +78,9 @@ elif [ "$TERM" = 'cygwin' ]; then
 	ENLIGHTENED=1
 fi
 
+# Make Mac OS X show colors in the `ls` command.
+export CLICOLOR=1
+
 # Custom bash prompt.
 git_branch() {
 	branch=`git branch 2> /dev/null | sed -e '/^[^*]/d' | perl -pe 's/^\*\s+//g'`
