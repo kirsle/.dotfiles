@@ -21,6 +21,10 @@ export PATH="/usr/sbin:/sbin:/usr/bin:/bin:$HOME/bin:$HOME/go/bin"
 if [[ $platform == "darwin" ]]; then
 	# Prefer /usr/local/bin because homebrew
 	export PATH="/usr/local/bin:$PATH"
+
+	# Enable colors and set a similar color scheme as Linux (see `man ls`)
+	export CLICOLOR=1
+	export LSCOLORS="ExGxcxdxcxegedabagecec"
 else
 	export PATH="$PATH:/usr/local/bin:/usr/local/sbin"
 fi
@@ -77,9 +81,6 @@ elif [ "$TERM" = 'screen' ] || [ "$TERM" = 'screen-256color' ]; then
 elif [ "$TERM" = 'cygwin' ]; then
 	ENLIGHTENED=1
 fi
-
-# Make Mac OS X show colors in the `ls` command.
-export CLICOLOR=1
 
 # Custom bash prompt.
 git_branch() {

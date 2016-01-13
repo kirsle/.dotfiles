@@ -9,7 +9,6 @@ export LANG=en_US.UTF-8           # Unicode
 setopt prompt_subst               # Allow for dynamic prompts
 autoload -U colors && colors      # Get color aliases
 autoload -U compinit && compinit  # Better tab completion
-export CLICOLOR=1                 # Colors in `ls` on Mac OS
 export HISTSIZE=2000              # History settings
 export HISTFILE="$HOME/.history"
 export SAVEHIST=$HISTSIZE
@@ -20,6 +19,13 @@ setopt nobeep
 
 # 256 colors
 [[ "$TERM" == "xterm" ]] && export TERM=xterm-256color
+
+# CLI colors under OS X for `ls`
+if [[ `uname` == "Darwin" ]]; then
+	# Enable colors and set a similar scheme as on Linux (see `man ls`)
+	export CLICOLOR=1
+	export LSCOLORS="ExGxcxdxcxegedabagecec"
+fi
 
 # Normalize the PATH
 CORE_PATH="/usr/sbin:/sbin:/usr/bin:/bin"
