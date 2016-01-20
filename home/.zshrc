@@ -107,6 +107,16 @@ if [[ `uname` == 'Linux' ]] then
 	alias ls="ls --color=auto"
 fi
 
+# `h` is a shortcut for `history 1` (show all history) or `history 1 | grep`
+# example: `h ls` will do `history 1 | grep ls`
+h() {
+	if [ -z "$*" ]; then
+		history 1;
+	else
+		history 1 | egrep "$@";
+	fi
+}
+
 ###############################################################################
 # zsh plugins                                                                 #
 ###############################################################################
