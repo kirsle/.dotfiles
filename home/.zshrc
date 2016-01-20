@@ -131,7 +131,6 @@ if ! zgen saved; then
 	zgen oh-my-zsh plugins/virtualenv
 	zgen oh-my-zsh plugins/virtualenvwrapper
 	zgen load zsh-users/zsh-syntax-highlighting
-	zgen load tarruda/zsh-autosuggestions # depends on syntax-highlighting
 
 	# Save all to the init script
 	zgen save
@@ -169,17 +168,6 @@ ZSH_HIGHLIGHT_STYLES[globbing]=fg=green
 # Highlight command line flags too.
 ZSH_HIGHLIGHT_STYLES[single-hyphen-option]=fg=27
 ZSH_HIGHLIGHT_STYLES[double-hyphen-option]=fg=27
-
-###
-# Configure plugin: zsh-autosuggestions
-###
-export AUTOSUGGESTION_HIGHLIGHT_COLOR="fg=8"
-export AUTOSUGGESTION_ACCEPT_RIGHT_ARROW=1
-
-zle-line-init() {
-	zle autosuggest-start
-}
-zle -N zle-line-init
 
 # Finalize and export the prompt
 export PROMPT=$base_prompt
