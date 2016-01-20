@@ -173,8 +173,13 @@ ZSH_HIGHLIGHT_STYLES[double-hyphen-option]=fg=27
 ###
 # Configure plugin: zsh-autosuggestions
 ###
-export AUTOSUGGESTION_HIGHLIGHT_COLOR="fg=2"
+export AUTOSUGGESTION_HIGHLIGHT_COLOR="fg=8"
 export AUTOSUGGESTION_ACCEPT_RIGHT_ARROW=1
+
+zle-line-init() {
+	zle autosuggest-start
+}
+zle -N zle-line-init
 
 # Finalize and export the prompt
 export PROMPT=$base_prompt
