@@ -2,7 +2,6 @@
 # .zshrc
 #
 # Kirsle's Global ZSH Configuration
-# Updated: 2015-07-07
 ###
 
 export LANG=en_US.UTF-8           # Unicode
@@ -131,7 +130,7 @@ if ! zgen saved; then
 	# Load plugins
 	zgen oh-my-zsh plugins/virtualenv
 	zgen oh-my-zsh plugins/virtualenvwrapper
-	zgen load jimmijj/zsh-syntax-highlighting
+	zgen load zsh-users/zsh-syntax-highlighting
 	zgen load tarruda/zsh-autosuggestions # depends on syntax-highlighting
 
 	# Save all to the init script
@@ -149,6 +148,27 @@ export ZSH_THEME_VIRTUALENV_PREFIX="("
 export ZSH_THEME_VIRTUALENV_SUFFIX=")"
 local virtualenv_prompt='%{$orange%}$(virtualenv_prompt_info)%{$reset_color%}'
 local base_prompt="${virtualenv_prompt}${base_prompt}"
+
+###
+# Configure plugin: zsh-syntax-highlighting
+###
+
+typeset -A ZSH_HIGHLIGHT_STYLES
+
+# I like blue instead of green as the base color for most things.
+# 39 = light blue, 27 = darker blue
+ZSH_HIGHLIGHT_STYLES[alias]=fg=39
+ZSH_HIGHLIGHT_STYLES[suffix-alias]=fg=39,underline
+ZSH_HIGHLIGHT_STYLES[builtin]=fg=39
+ZSH_HIGHLIGHT_STYLES[function]=fg=39
+ZSH_HIGHLIGHT_STYLES[command]=fg=39
+ZSH_HIGHLIGHT_STYLES[precommand]=fg=39,underline
+ZSH_HIGHLIGHT_STYLES[hashed-command]=fg=39
+ZSH_HIGHLIGHT_STYLES[globbing]=fg=green
+
+# Highlight command line flags too.
+ZSH_HIGHLIGHT_STYLES[single-hyphen-option]=fg=27
+ZSH_HIGHLIGHT_STYLES[double-hyphen-option]=fg=27
 
 ###
 # Configure plugin: zsh-autosuggestions
