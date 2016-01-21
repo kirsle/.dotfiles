@@ -1,0 +1,80 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use Cwd;
+
+# Make symlinks from your git-project repo into the system. This is only
+# designed to work with Media Temple's git-project workflow.
+#
+# Usage: sudo link-stuff.pl /path/to/git/project
+#
+# The git-project root should have top-level folders such as `perl-libs`, with
+# a path convention like e.g. `perl-libs/$NAME/lib/**/*.pm` -- this script will
+# attempt to find system-installed counterparts and symlink them to the file
+# from your git repo.
+#
+# Currently supports the following types of things:
+# * perl-libs
+
+my $root = shift;
+if (!$root) {
+	die "Usage: $0 /path/to/git/project\n";
+}
+if (!-d $root) {
+	die "Error: $root is not a directory\n";
+}
+
+chdir($root);
+my $abspath = Cwd::abs_path(".");
+
+if (-d "./perl-libs") {
+	perl_libs();
+}
+
+sub perl_libs {
+	# Root directories to check.
+	my @lib = (
+		"/usr/share/perl5",
+		"/usr/share/perl5/vendor_perl",
+	);
+
+	# Find all the perl-libs projects.
+	opendir(my $dh, "./perl-libs");
+	foreach my $project (readdir($dh)) {
+		next unless -d "./perl-libs/$project/lib";
+		print "Project: perl-libs/$project\n";
+
+		# Get its modules.
+		foreach my $module (scan("./perl-libs/$project/lib")) {
+			$module =~ s{^\./perl-libs/$project/lib/}{}g;
+			foreach my $lib (@lib) {
+				if (-f "$lib/$module") {
+					print "  - Link: $lib/$module\n";
+					unlink("$lib/$module");
+					symlink("$abspath/perl-libs/$project/lib/$module", "$lib/$module");
+				}
+			}
+		}
+	}
+}
+
+# Recursively scan a directory.
+sub scan {
+	my $dir = shift;
+
+	my @found;
+
+	opendir (my $dh, $dir);
+	foreach my $file (readdir($dh)) {
+		next if ($file eq '.' || $file eq '..');
+		if (-d "$dir/$file") {
+			push @found, scan("$dir/$file");
+		} else {
+			push @found, "$dir/$file";
+		}
+	}
+	closedir($dh);
+
+	return @found;
+}
