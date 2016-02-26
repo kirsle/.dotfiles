@@ -1,0 +1,10 @@
+#!/usr/bin/perl
+
+# Set my local git config to my work email so I don't change my global gitconfig
+
+if (!-d "./.git") {
+	die "You don't appear to be inside a git repository.\n";
+}
+
+system(qw(git config user.email npetherbridge@mediatemple.net));
+print "E-mail updated for this repository.\n";
