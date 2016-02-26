@@ -1,6 +1,6 @@
 [user]
 	name = Noah Petherbridge
-	email = root@kirsle.net
+	email = "(none)"  # Use `gu` to set this on a per-repo basis
 
 [alias]
 	ci = commit

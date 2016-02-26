@@ -1,0 +1,29 @@
+#!/usr/bin/perl
+
+# Set my local git e-mail on a per-repo basis to my work vs. home address.
+#
+# Usage: `gu work` or `gu home` (or shortcuts: `gu w` and `gu h`)
+
+if (scalar @ARGV == 0) {
+	die "Usage: gu work || gu home || gu w || gu h\n";
+}
+
+my $env = shift(@ARGV);
+my $email = '';
+
+if ($env =~ /^w/i) {
+	$email = 'npetherbridge@mediatemple.net';
+}
+elsif ($env =~ /^h/i) {
+	$email = 'root@kirsle.net';
+}
+else {
+	die "Invalid environment option, should be w[ork] or h[ome]\n";
+}
+
+if (!-d "./.git") {
+	die "You don't appear to be inside a git repository.\n";
+}
+
+system(qw(git config user.email), $email);
+print "E-mail updated as $email for this repository.\n";
