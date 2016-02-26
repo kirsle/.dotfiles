@@ -116,6 +116,8 @@ function title {
 function git {
 	if [ -x "/usr/local/bin/git" ]; then
 		/usr/local/bin/git $@
+	elif [ -x "/opt/git/bin/git" ]; then
+		/opt/git/bin/git $@
 	elif [ -x "/usr/bin/git" ]; then
 		/usr/bin/git $@
 	else
