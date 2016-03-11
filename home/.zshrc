@@ -90,8 +90,17 @@ local base_prompt="${base_prompt}%{$blue%}]%# %{%f%}"
 # Set terminal titles automatically
 ###
 
+# allow resetting the terminal title like in DOS
+function title {
+	export PROMPT_DOS_TITLE="$1"
+}
+
 precmd() {
-	print -Pn "\e]0;%n@${PROMPT_HOSTNAME}:%~\a"
+	if [ "$PROMPT_DOS_TITLE" != "" ]; then
+		print -Pn "\e]0;${PROMPT_DOS_TITLE}\a"
+	else
+		print -Pn "\e]0;%n@${PROMPT_HOSTNAME}:%~\a"
+	fi
 }
 
 ###############################################################################
