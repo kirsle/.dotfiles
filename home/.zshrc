@@ -40,6 +40,11 @@ export WORKON_HOME=~/.virtualenvs
 # Go
 export GOPATH="$HOME/go"
 
+# Node/npm
+export NPM_PACKAGES="${HOME}/.npm-global-pkg"
+export NODE_PATH="${NPM_PACKAGES}/lib/node_modules:${NODE_PATH}"
+export PATH="${NPM_PACKAGES}/bin:$PATH"
+
 # Reload zshrc
 alias rezsh="source ${HOME}/.zshrc"
 
@@ -110,6 +115,7 @@ precmd() {
 alias vi="vim"
 alias grep="grep --exclude=min.js --color=auto"
 alias ll="ls -l"
+alias tojson="python -m json.tool"  # JSON pretty print
 
 if [[ `uname` == 'Linux' ]] then
 	alias ls="ls --color=auto"
