@@ -9,7 +9,15 @@ The `minecraft-control` password is obtained from the settings.ini for
 minecraft-control. Backups are placed in the `backups/` directory under the
 Minecraft server root, named with datetime stamps.
 
-See `mc-backup.py --help` for command usage."""
+See `mc-backup.py --help` for command usage.
+
+minecraft-control is available at: https://github.com/kirsle/minecraft-control
+
+Example setting this up in cron:
+0 2 * * * ~/cron/mc-backup.py -c ~/mc-control/settings.ini -s ~/mc-server
+
+--Kirsle
+https://www.kirsle.net/"""
 
 import argparse
 from configparser import RawConfigParser
