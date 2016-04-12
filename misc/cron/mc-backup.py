@@ -31,6 +31,14 @@ import time
 # Import the minecraft-control client library.
 from mcclient import MinecraftClient
 
+# Threshhold for the number of backups to retain. Modify these variables if you
+# don't like them.
+DAILY_BACKUPS  = 7  # Retain the 7 most recent daily backups
+WEEKLY_BACKUPS = 4  # For backups > DAILY_BACKUPS, keep this many copies around
+                    # once per week.
+WEEKLY_WEEKDAY = 6  # For weekly backups, base them around Sundays.
+                    # 0=Monday .. 6=Sunday
+
 logging.basicConfig()
 log = logging.getLogger("mc-backup")
 log.setLevel(logging.INFO)
@@ -103,6 +111,10 @@ class Application:
         # Change into the server's directory.
         os.chdir(self.args.server)
 
+        # If we're only culling backups, do that and exit.
+        if self.args.clean:
+            return self.cull_backups()
+
         # Backups directory.
         backups = os.path.join(self.args.server, "backups")
         if not os.path.isdir(backups):
@@ -147,8 +159,53 @@ class Application:
         log.info("Turning auto-saving back on!")
         self.client.sendline("save-on")
 
-        # Fin
-        sys.exit(0)
+        # Cull old backups.
+        self.cull_backups()
+
+    def cull_backups(self):
+        """Trim the backup copies and remove older backups."""
+        log.info("Culling backups...")
+
+        # Date cut-off for daily backups.
+        daily_cutoff = (
+            datetime.datetime.utcnow() - datetime.timedelta(days=DAILY_BACKUPS)
+            ).strftime("%Y-%m-%d")
+        log.debug("Daily cutoff date: {}".format(daily_cutoff))
+
+        # Number of weekly backups spared.
+        weekly_spared = 0
+
+        # Check all the existing backups.
+        for tar in sorted(os.listdir("backups"), reverse=True):
+            if not tar.endswith(".tar.gz"):
+                continue
+
+            try:
+                dt      = datetime.datetime.strptime(tar, "%Y-%m-%d_%H-%M-%S.tar.gz")
+                weekday = dt.weekday()
+                date    = dt.strftime("%Y-%m-%d")
+            except Exception as e:
+                log.error("Error parsing datetime from existing backup {}: {}".format(
+                    tar, e,
+                ))
+                continue
+
+            # If this is within the daily cutoff, we keep it.
+            if date > daily_cutoff:
+                log.debug("DAILY KEEP: {} is within the daily cutoff".format(tar))
+                continue
+
+            # Now we're at backups older than our daily threshhold, so we only
+            # want to keep one backup per week until we have WEEKLY_BACKUPS
+            # copies, and only for backups taken on WEEKLY_WEEKDAY day-of-week.
+            if weekday == WEEKLY_WEEKDAY and weekly_spared < WEEKLY_BACKUPS:
+                log.debug("WEEKLY KEEP: {} is being kept".format(tar))
+                weekly_spared += 1
+                continue
+
+            # All other old backups get deleted.
+            log.info("Cull old backup: {}".format(tar))
+            os.unlink("backups/{}".format(tar))
 
     def on_auth_error(self, mc, error):
         """Handle unsuccessful authentication."""
@@ -175,6 +232,13 @@ if __name__ == "__main__":
             "./server.properties file)",
         type=str,
         required=True,
+    )
+    parser.add_argument("--clean",
+        help="Clean up (cull) old backups; do not create a new backup. "
+            "This executes the cull backups functionality which trims the "
+            "set of stored backups on disk to fit your backup threshholds. "
+            "This option does not trigger a *new* backup to be taken.",
+        action="store_true",
     )
     args = parser.parse_args()
     if args.debug:
