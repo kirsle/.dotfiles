@@ -30,7 +30,7 @@ TARGETS = OrderedDict([
         path = "/run/media/kirsle/Cyro/Pictures/Organized",
     )),
     ("Obelisk", dict(
-        path = "/run/media/kirsle/Obelisk/Redundant/Images/Organized",
+        path = "/mnt/Obelisk/Redundant/Images/Organized",
         rsync = "rsync -avu --no-p --delete {source}/ \"{destination}/\"",
     )),
     ("Rosewill", dict(

@@ -1,0 +1,19 @@
+# gtkrc-2.0 file to set the panel text color to white,
+# for some XFCE and MATE themes.
+#
+# Also resets the murrine text style, for Bluebird/Ambiance/some other
+# themes that want a text-shadow ugly effect.
+
+style "panel"
+{
+	fg[NORMAL] = "#FFFFFF"
+	fg[ACTIVE] = "#FFFFFF"
+
+	engine "murrine" {
+		textstyle = 0
+	}
+}
+
+widget_class "*Panel*" style "panel"
+widget "*Panel*" style "panel"
+class "*Panel*" style "panel"
