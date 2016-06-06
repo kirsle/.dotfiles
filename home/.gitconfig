@@ -1,6 +1,6 @@
 [user]
 	name = Noah Petherbridge
-	email = (none)
+	email = "(none)"
 
 [alias]
 	ci = commit
@@ -20,5 +20,7 @@
 
 [push]
 	default = simple
+
+# (mt) git-project
 [project]
 	defaultprojecttype = branch
