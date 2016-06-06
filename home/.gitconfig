@@ -1,6 +1,6 @@
 [user]
 	name = Noah Petherbridge
-	email = "(none)"  # Use `gu` to set this on a per-repo basis
+	email = (none)
 
 [alias]
 	ci = commit
@@ -20,3 +20,5 @@
 
 [push]
 	default = simple
+[project]
+	defaultprojecttype = branch

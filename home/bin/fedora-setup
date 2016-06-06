@@ -77,8 +77,16 @@ class Application(object):
             self.shell("sudo plymouth-set-default-theme solar && sudo dracut -f")
 
         # My favorite desktop apps.
-        self.install("firefox", "thunderbird", "eog", "file-roller",
-            "gedit", "gimp", "libreoffice", "banshee")
+        self.install(
+            "firefox",
+            "thunderbird",
+            #"eog",
+            #"file-roller",
+            #"gedit",
+            "gimp",
+            "libreoffice",
+            "banshee",
+        )
 
         # Development stuff.
         self.install("git", "zsh", "python-virtualenvwrapper")
