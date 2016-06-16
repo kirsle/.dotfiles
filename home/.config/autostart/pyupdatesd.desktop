@@ -5,8 +5,11 @@ Type=Application
 Name=pyupdatesd
 Comment=Yum Updates Daemon
 Exec=pyupdatesd
-OnlyShowIn=XFCE;
+OnlyShowIn=XFCE;MATE;
 StartupNotify=false
 Terminal=false
 Hidden=false
 
+X-MATE-Autostart-enabled=true
+Name[en_US]=pyupdatesd: Yum Updates Daemon
+Comment[en_US]=Notifies about available software updates.
