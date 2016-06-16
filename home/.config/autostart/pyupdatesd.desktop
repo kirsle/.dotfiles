@@ -4,6 +4,7 @@ Version=0.9.4
 Type=Application
 Name=pyupdatesd
 Comment=Yum Updates Daemon
+Icon=/usr/share/icons/gnome/32x32/status/software-update-available.png
 Exec=pyupdatesd
 OnlyShowIn=XFCE;MATE;
 StartupNotify=false
