@@ -197,3 +197,9 @@ fi
 if [ -f ~/.localbashrc ]; then
 	. ~/.localbashrc
 fi
+
+###
+# Import common functions (bash/zsh)
+###
+
+. ~/.common.sh

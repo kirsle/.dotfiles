@@ -192,3 +192,9 @@ ZSH_HIGHLIGHT_STYLES[double-hyphen-option]=fg=27
 
 # Finalize and export the prompt
 export PROMPT=$base_prompt
+
+###
+# Import common functions (bash/zsh)
+###
+
+. ~/.common.sh
