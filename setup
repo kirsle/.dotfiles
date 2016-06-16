@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Initialize your dotfiles setup.
 
@@ -16,6 +16,7 @@ import os.path
 import shutil
 import re
 import subprocess
+import stat
 
 # Install? (deletes existing files in $HOME).
 install = "--install" in sys.argv
@@ -85,6 +86,11 @@ def crawl(folder):
         # Link it.
         print("Link: %s -> %s" % (home, target))
         os.symlink(target, home)
+
+        # Fix permissions.
+        if path == ".ssh/config":
+            print("chmod 600 .ssh/config")
+            os.chmod(home, stat.S_IRUSR | stat.S_IWUSR)
 
 crawl(source)
 
