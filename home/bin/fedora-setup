@@ -9,8 +9,13 @@ Fonts:
 
 Apps:
     - Firefox, Thunderbird
-    - Eye of Gnome, File Roller, Gedit, GIMP
+    - The GIMP
     - Banshee
+    - MATE Desktop counterparts to my favorite old GNOME apps:
+        - Eye of MATE (Image viewer, fork of Eye of GNOME)
+        - Engrampa (archive manager, fork of file-roller)
+        - Pluma (text editor, fork of gedit)
+        - Atril (PDF viewer, fork of evince)
 
 Dev stuff:
     - zsh
@@ -80,9 +85,10 @@ class Application(object):
         self.install(
             "firefox",
             "thunderbird",
-            #"eog",
-            #"file-roller",
-            #"gedit",
+            "eom",
+            "engrampa",
+            "pluma",
+            "atril",
             "gimp",
             "libreoffice",
             "banshee",
