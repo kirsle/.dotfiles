@@ -50,6 +50,11 @@ def main():
         help="JSON data to be sent with the request.",
     )
     parser.add_argument(
+        "--insecure", "-k",
+        action="store_true",
+        help="Don't validate SSL certificates.",
+    )
+    parser.add_argument(
         "method",
         help="The HTTP method to use",
         choices=["GET", "POST", "PUT", "PATCH", "DELETE"],
@@ -78,11 +83,16 @@ def do_http(args):
     if args.header:
         headers.update(args.header)
 
+    ssl_opts = {}
+    if args.insecure:
+        ssl_opts.update(verify=False)
+
     result = getattr(requests, args.method.lower())(
         args.url,
         headers=headers,
         cookies=args.cookie,
         data=args.data,
+        **ssl_opts
     )
 
     print(args.method, args.url, result.status_code)
