@@ -1,6 +1,6 @@
 [user]
 	name = Noah Petherbridge
-	email = "(none)"
+	email = root@kirsle.net
 
 [alias]
 	ci = commit
