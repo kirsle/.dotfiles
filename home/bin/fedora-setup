@@ -95,7 +95,7 @@ class Application(object):
         )
 
         # Development stuff.
-        self.install("git", "zsh", "python-virtualenvwrapper")
+        self.install("git", "zsh", "ctags", "python-virtualenvwrapper")
 
         # Filesystems
         self.install("fuse-encfs", "fuse-exfat", "gvfs-mtp")
