@@ -1,0 +1,15 @@
+[Desktop Entry]
+Encoding=UTF-8
+Version=0.9.4
+Type=Application
+Name=keyboard-repeat
+Comment=Sets my keyboard repeat setting in GNOME.
+Icon=/usr/share/icons/Adwaita/32x32/devices/input-keyboard.png
+Exec=keyboard-repeat
+OnlyShowIn=GNOME
+StartupNotify=false
+Terminal=false
+Hidden=false
+
+Name[en_US]=keyboard-repeat
+Comment[en_US]=Sets my keyboard repeat setting in GNOME.
