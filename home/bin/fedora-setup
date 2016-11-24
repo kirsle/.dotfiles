@@ -3,6 +3,26 @@
 """
 Installs my favorite programs on a new Fedora system.
 
+Most things are generally safe enough to install on any Fedora system, but there
+are command line flags for some of the possibly dangerous options:
+
+    --xfce
+        This installs MATE components on an Xfce desktop. Normally the Xfce
+        desktop would be automatically detected, but if not, provide this
+        option.
+
+    --plymouth, -p
+        Install and configure my favorite Plymouth theme (solar). This option
+        must be explicitly passed in because changing the Plymouth theme might
+        not always be desired.
+
+    --wl
+        Install the Broadcom wireless drivers (akmod-wl). Only do this on
+        systems that need the `wl` driver.
+
+    --dry-run
+        Do not actually change any packages on the system.
+
 Fonts:
     - Microsoft core fonts
     - Emoji fonts
@@ -11,7 +31,7 @@ Apps:
     - Firefox, Thunderbird
     - The GIMP
     - Banshee
-    - MATE Desktop counterparts to my favorite old GNOME apps:
+    - MATE Desktop counterparts to my favorite old GNOME apps (--xfce only):
         - Eye of MATE (Image viewer, fork of Eye of GNOME)
         - Engrampa (archive manager, fork of file-roller)
         - Pluma (text editor, fork of gedit)
@@ -21,6 +41,9 @@ Dev stuff:
     - zsh
     - python-virtualenvwrapper
     - git
+    - golang
+    - pyflakes
+    - nodejs, npm
 
 Filesystems:
     - fuse-encfs
@@ -40,13 +63,26 @@ Themes:
 http://sh.kirsle.net/
 """
 
+import argparse
 import hashlib
 import os
 import subprocess
 
 class Application(object):
-    def __init__(self):
+    def __init__(self, args):
         self.to_install = []
+
+        # Detect desktop environments.
+        desktop = os.environ.get("XDG_CURRENT_DESKTOP", "").upper()
+        self.xfce = args.xfce or desktop == "XFCE"
+
+        # More args.
+        self.noop     = args.dry_run
+        self.plymouth = args.plymouth
+        self.wl       = args.wl
+
+        # Using custom configs?
+        self.custom = self.xfce or self.plymouth or self.wl
 
     def main(self):
         """Main entry point of the app."""
@@ -59,11 +95,11 @@ class Application(object):
             self.shell("sudo dnf install --nogpgcheck http://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm http://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm")
 
         # Microsoft core fonts and Emoji support.
-        if not self.test("rpm -q msttcore-fonts") or True:
+        if not self.test("rpm -q msttcore-fonts"):
             # The fonts aren't signed, so verify their checksum.
             self.shell("wget -O /tmp/msttcore-fonts.rpm https://rpm.kirsle.net/any/rpm/msttcore-fonts-2.0-3.noarch.rpm")
             expect_sum = "a20ecca993827d10bb51118a0cfdf8a1e65f161a78361bee865a138ca5a4f43f"
-            if self.sha256sum("/tmp/msttcore-fonts.rpm") != expect_sum:
+            if not self.noop and self.sha256sum("/tmp/msttcore-fonts.rpm") != expect_sum:
                 print("!!! WARNING !!!")
                 print("The SHA256 hash of msttcore-fonts doesn't match what I expected!")
                 print("Expected: {}".format(expect_sum))
@@ -71,12 +107,14 @@ class Application(object):
                 input("Press any key to continue. . .")
             else:
                 self.shell("sudo dnf install /tmp/msttcore-fonts.rpm")
-            os.unlink("/tmp/msttcore-fonts.rpm")
+
+            if os.path.isfile("/tmp/msttcore-fonts.rpm"):
+                os.unlink("/tmp/msttcore-fonts.rpm")
         self.install("gdouros-symbola-fonts")
 
         # Themes
         self.install("bluecurve-cursor-theme")
-        if not self.test("rpm -q plymouth-theme-solar"):
+        if self.plymouth and not self.test("rpm -q plymouth-theme-solar"):
             self.install("plymouth-theme-solar")
             self.commit()
             self.shell("sudo plymouth-set-default-theme solar && sudo dracut -f")
@@ -85,17 +123,31 @@ class Application(object):
         self.install(
             "firefox",
             "thunderbird",
-            "eom",
-            "engrampa",
-            "pluma",
-            "atril",
             "gimp",
             "libreoffice",
             "banshee",
         )
 
+        # Ones that I mainly want on the Xfce desktop (MATE apps)
+        if self.xfce:
+            self.install(
+                "pluma",     # gedit (Text Editor)
+                "atril",     # evince (Document Viewer)
+                "engrampa",  # file-roller (Archive Manager)
+                "eom",       # eog (Picture Viewer)
+            )
+
         # Development stuff.
-        self.install("git", "zsh", "ctags", "python-virtualenvwrapper")
+        self.install(
+            "ctags",
+            "git",
+            "golang",
+            "nodejs",
+            "npm",
+            "pyflakes",
+            "python2-virtualenvwrapper",
+            "zsh",
+        )
 
         # Filesystems
         self.install("fuse-encfs", "fuse-exfat", "gvfs-mtp")
@@ -107,6 +159,16 @@ class Application(object):
             "gstreamer1-plugins-bad-freeworld", "vlc")
 
         self.commit()
+
+        print("\nSuccess! Everything has been set up and configured.")
+        if self.custom:
+            print("\nThe following custom software groups were included:\n")
+            if self.xfce:
+                print("\tThe XFCE set (MATE desktop utilities for XFCE)")
+            if self.plymouth:
+                print("\tThe Solar Plymouth theme")
+            if self.wl:
+                print("\tThe Broadcom proprietary WiFi driver")
 
     def install(self, *rpm):
         """Name an rpm I wanna install. Checks if it's already installed first,
@@ -125,10 +187,16 @@ class Application(object):
 
     def shell(self, cmd):
         print("EXECUTE: {}".format(cmd))
+        if self.noop:
+            return
+
         subprocess.call(cmd, shell=True)
 
     def test(self, command):
         """Test if a command exits successfully."""
+        if self.noop:
+            return False
+
         try:
             subprocess.check_call("{} >/dev/null 2>&1".format(command), shell=True)
             return True
@@ -143,5 +211,24 @@ class Application(object):
         return m.hexdigest()
 
 if __name__ == "__main__":
-    app = Application()
+    parser = argparse.ArgumentParser(description="Noah's Fedora Setup Script")
+    parser.add_argument("--xfce", "-x",
+        help="Assume the Xfce desktop environment and install useful MATE "
+            "utilities (pluma, atril, eom, engrampa)",
+        action="store_true",
+    )
+    parser.add_argument("--plymouth", "-p",
+        help="Install and configure the Solar plymouth theme (only if the "
+        "theme is not presently installed)",
+        action="store_true",
+    )
+    parser.add_argument("--wl",
+        help="Install the Broadcom `wl` WiFi driver (akmod-wl)",
+        action="store_true",
+    )
+    parser.add_argument("--dry-run",
+        help="Do not actually modify any packages on the system.",
+        action="store_true",
+    )
+    app = Application(args=parser.parse_args())
     app.main()
