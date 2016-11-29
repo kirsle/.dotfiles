@@ -1,0 +1,56 @@
+#!/usr/bin/env python
+
+"""gosh: use Golang as a shell scripting language.
+
+This is written in Python so that I don't have to commit any binaries to my
+dotfiles repo, and my Go shell scripts can also remain in source form.
+
+Usage: write a Go program with this shebang comment on top immediately before
+the `package main` statement:
+
+    #!/usr/bin/env gosh
+    package main
+
+And make it executable and run it like any shell script.
+"""
+
+import codecs
+import os
+import subprocess
+import sys
+import tempfile
+
+def main():
+    if len(sys.argv) == 1:
+        die("Usage: gosh <file.go>")
+
+    # Get the Go source file from the command line.
+    source = sys.argv[1]
+    argv   = sys.argv[2:]
+    if not os.path.isfile(source):
+        die("{}: not a file".format(source))
+
+    # Make a temp file that lacks the shebang line of the input file.
+    with codecs.open(source, "r", "utf-8") as fh:
+        # Get the shebang off and sanity check it.
+        shebang = fh.readline()
+        if not "gosh" in shebang:
+            die("{}: doesn't appear to be a Go script".format(source))
+
+        # Write it to a temp file, sans shebang.
+        temp = tempfile.NamedTemporaryFile(delete=False, suffix=".go")
+        temp.write(fh.read().strip())
+        temp.close()
+
+        # Call it.
+        subprocess.call(["go", "run", temp.name] + argv)
+
+        # Clean up.
+        os.unlink(temp.name)
+
+def die(message):
+    print(message)
+    sys.exit(1)
+
+if __name__ == "__main__":
+    main()

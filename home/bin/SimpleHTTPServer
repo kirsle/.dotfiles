@@ -1,0 +1,57 @@
+#!/usr/bin/env gosh
+package main
+
+// SimpleHTTPServer is a simple Go static file server, similar to the Python
+// module of the same name, but which supports high concurrency and all the
+// other niceties that you get from Go out of the box.
+//
+// It runs via my `gosh` wrapper for treating simple Go programs as shell
+// scripts. See my `gosh` script, or just remove the shebang line at the top
+// of this file to `go build` your own version.
+
+import (
+	"flag"
+	"fmt"
+	"log"
+	"net/http"
+)
+
+// LogMiddleware logs all HTTP requests.
+func LogMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		res := &ResponseWriter{w, 200}
+		next.ServeHTTP(res, r)
+		log.Printf("%s %d %s %s\n",
+			r.RemoteAddr,
+			res.Status,
+			r.Method,
+			r.RequestURI,
+		)
+	})
+}
+
+// ResponseWriter is my own wrapper around http.ResponseWriter that lets me
+// capture its status code, for logging purposes.
+type ResponseWriter struct {
+	http.ResponseWriter
+	Status int
+}
+
+// WriteHeader wraps http.WriteHeader to also capture the status code.
+func (w *ResponseWriter) WriteHeader(code int) {
+	w.ResponseWriter.WriteHeader(code)
+	w.Status = code
+}
+
+func main() {
+	// Command line flag: the port number to listen on.
+	port := flag.Int("port", 8000, "The port number to listen on.")
+	flag.Parse()
+
+	fmt.Printf("Serving at http://0.0.0.0:%d/\n", *port)
+	err := http.ListenAndServe(
+		fmt.Sprintf(":%d", *port),
+		LogMiddleware(http.FileServer(http.Dir("."))),
+	)
+	panic(err)
+}
