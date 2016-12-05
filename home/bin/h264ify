@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+
+"""h264ify - Upgrade my videos to h.264/AAC for Chromecast.
+
+With Google Chrome, you can Chromecast any movie file from your PC by dragging
+the movie into a Chrome window, and then cast the tab to your Chromecast.
+
+However this only works if the video is encoded with H.264 for video and
+AAC for audio. Other video files will instead "download" in Chrome instead of
+play inside the tab.
+
+This script takes input video file names (without a `.mp4` extension), and
+encodes them into a file of the same name but with a `.mp4` extension.
+
+Usage: h264ify <video files...>
+
+--Kirsle
+"""
+
+import os
+import subprocess
+import sys
+
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: {} <video files...>".format(sys.argv[0]))
+        sys.exit(1)
+
+    for input_file in sys.argv[1:]:
+        # Dissect the file parts.
+        file_parts = os.path.basename(input_file).split(".")
+        extension  = file_parts.pop().lower()
+        basename   = ".".join(file_parts)
+
+        # Common video file types.
+        if extension not in [
+                "avi", "mov", "mpv", "mkv", "mp4", "mpg", "mpeg", "flv",
+            ]:
+            continue
+
+        # Sanity check that they didn't give a .mp4 file.
+        if extension == "mp4":
+            print("The file extension '.mp4' might mean the video already works with the Chromecast")
+
+            # If there were many files to run on, don't stop and prompt them,
+            # just warn and skip it.
+            if len(sys.argv) == 2 and not input("Are you sure you want to encode it anyway? [yN] ").strip().lower().startswith("y"):
+                print("Exiting")
+                sys.exit(1)
+
+        # Make the output file name.
+        output_file = basename + ".mp4"
+        i = 0
+        while os.path.isfile(output_file):
+            i += 1
+            output_file = "{} ({}).mp4".format(basename, i)
+
+        print("Encoding output video to: {}".format(output_file))
+        subprocess.call([
+            "ffmpeg",
+            "-i", input_file,
+            "-c:v", "libx264",  # h.264 video codec
+            "-preset", "slow",  # encoding preset
+            "-crf", "22",
+            "-c:a", "aac",       # aac audio codec
+            output_file,
+        ])
+
+if __name__ == "__main__":
+    main()
