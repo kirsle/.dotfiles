@@ -47,6 +47,8 @@ def main():
             if len(sys.argv) == 2 and not input("Are you sure you want to encode it anyway? [yN] ").strip().lower().startswith("y"):
                 print("Exiting")
                 sys.exit(1)
+            elif len(sys.argv) == 2:
+                continue
 
         # Make the output file name.
         output_file = basename + ".mp4"
