@@ -105,8 +105,7 @@ sub main {
     if ($command eq "setup") {
         setup();
         if (fork() == 0) {
-            system("dfm vim >/dev/null 2>&1");
-            print "[`dfm vim` finished]\n";
+            vim();
         }
     } elsif ($command eq "vim") {
         vim();
