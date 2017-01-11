@@ -1,24 +1,27 @@
 # Top-most EditorConfig file
 root = true
 
-# Unix-style newlines on every file
+# Common settings for all files. I don't specify indent type here, because
+# some EditorConfig implementations (notably Atom) will cause default settings
+# and behaviors (like tab type auto-detection) to be overridden.
 [*]
 charset = utf-8
 end_of_line = lf
-indent_style = tab
-indent_size = 4
 trim_trailing_whitespace = true
 insert_final_newline = true
 
+# Python
 [*.py]
 indent_style = space
 indent_size = 4
 
-[*.{yml,yaml}]
+# YAML and Markdown
+[*.{yml,yaml,md}]
 indent_style = space
 indent_size = 2
 
-[*.md]
+# CoffeeScript
+[*.coffee]
 indent_style = space
 indent_size = 2
 

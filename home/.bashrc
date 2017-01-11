@@ -17,7 +17,7 @@ elif [[ "$unamestr" == "Darwin" ]]; then
 fi
 
 # PATH settings.
-export PATH="/usr/sbin:/sbin:/usr/bin:/bin:$HOME/bin:$HOME/go/bin"
+export PATH="/usr/sbin:/sbin:/usr/bin:/bin:$HOME/bin:$HOME/go/bin:$HOME/go/.ext/bin"
 if [[ $platform == "darwin" ]]; then
 	# Prefer /usr/local/bin because homebrew
 	export PATH="/usr/local/bin:$PATH"
@@ -40,6 +40,9 @@ export WORKON_HOME=~/.virtualenvs
 if [ -f /usr/bin/virtualenvwrapper.sh ]; then
 	source /usr/bin/virtualenvwrapper.sh
 fi
+
+# Go
+export GOPATH="$HOME/go/.ext:$HOME/go"
 
 # Colors!
 BLACK='\e[0;30m'
