@@ -105,6 +105,8 @@ sub main {
     if ($command eq "setup") {
         setup();
         if (fork() == 0) {
+            close(STDOUT);
+            close(STDERR);
             vim();
         }
     } elsif ($command eq "vim") {
