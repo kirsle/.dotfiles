@@ -2,6 +2,9 @@
 # Common shell functions/aliases between bash and zsh.
 ###
 
+# Notify to update the dotfiles.
+dfm check-update
+
 ################################################################################
 ## Functions
 ################################################################################

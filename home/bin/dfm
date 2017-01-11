@@ -1,0 +1,329 @@
+#!/usr/bin/env perl
+
+=head1 NAME
+
+dfm: Dotfiles Manager.
+
+=head1 DESCRIPTION
+
+This is a custom script to help me manage my dotfiles. The C<setup> script
+acts as an alias to C<dfm setup>.
+
+This is written in Perl for maximum compatibility; the old C<setup> script that
+this replaces was written in Python, and for the servers I work with I had to
+make it simultaneously support Python 2.6, 2.7 and 3.x; Perl is simpler and
+more universal.
+
+=head1 USAGE
+
+  dfm <command> [options...]
+
+=cut
+
+use strict;
+use warnings;
+
+use Cwd qw(getcwd abs_path);
+use Data::Dumper;
+use File::Copy;
+use FindBin;
+use Getopt::Long;
+
+# Our home folder and the root to the .dotfiles repo.
+our $HOME     = $ENV{HOME} || $ENV{USERPROFILE} || getcwd();
+our $DOTFILES = abs_path("$FindBin::RealBin/../..");
+our $BACKUP   = "$DOTFILES/backup";
+
+# Threshhold at which to start notifying about possible updates.
+our $UPDATE_FILE = "$DOTFILES/.last-updated";
+our $UPDATE_THRESHHOLD = 60*60*24*15;
+
+=head1 OPTIONS
+
+=over 4
+
+=item --noop
+
+Don't make any changes to the filesystem; just go through the motions.
+
+=item --copy
+
+Use file copies instead of symlinks, in case your host platform doesn't support
+symlinks.
+
+In C<--copy> mode, any existing symlinks to a dotfile will be deleted and
+replaced with a normal file copy.
+
+=item --force
+
+Force certain subcommands to do as much work as possible.
+
+In C<--force> mode, all existing symlinks to a dotfile will be deleted and
+re-linked (or copied if used with C<--copy>).
+
+When used with C<dfm check-update>, it always tells you the update notification
+including how many days since you've last updated.
+
+=item --help
+
+Shows this help documentation.
+
+=back
+
+=cut
+
+# Global command line arguments.
+our $noop  = 0;
+our $copy  = 0;
+our $force = 0;
+
+# Process command line arguments.
+sub flags {
+    # Command line flags.
+    my $help = 0;
+    GetOptions(
+        "force"  => \$force,
+        "noop"   => \$noop,
+        "copy"   => \$copy,
+        "help|?" => \$help,
+    );
+
+    if ($help) {
+        exec("perldoc", $0);
+    }
+}
+
+sub main {
+    flags();
+    if (scalar @ARGV == 0) {
+        die "Usage: dfm <command> [args...]\n";
+    }
+
+    # Handle commands.
+    my $command = lc(shift @ARGV);
+
+    if ($command eq "setup") {
+        setup();
+        system("dfm vim >/dev/null 2>&1 &");
+    } elsif ($command eq "vim") {
+        vim();
+    } elsif ($command eq "check-update") {
+        checkUpdate();
+    } elsif ($command eq "update") {
+        update();
+    }
+
+    return;
+}
+
+=head1 COMMANDS
+
+=over 4
+
+=item C<dfm setup>
+
+Sets up and installs the dotfiles.
+
+All files under the C<.dotfiles/home> directory are symlinked into their
+respective paths in C<$HOME>.
+
+If a file already exists in C<$HOME> and is not a link, the original file is
+copied into C<.dotfiles/backup> and then deleted and replaced with a link.
+
+Files that are already links are not modified, unless the C<--force> command
+line flag is used. Then links will be removed and relinked.
+
+At the end, this also calls C<dfm vim> in the background to handle Vim plugins.
+
+=cut
+
+sub setup {
+    crawl("$DOTFILES/home");
+
+    # Log the time we last ran this.
+    updated(time());
+}
+
+=item C<dfm vim>
+
+Sets up my Vim plugins.
+
+I use Git submodules for my Vim plugins, and these take several seconds to
+download when setting up my dotfiles for the first time.
+
+Calling C<dfm setup> will also call C<dfm vim> (in the background) at the end,
+so that most of the dotfiles get linked immediately and then the Vim ones
+follow shortly after, without making me wait for the submodules to download.
+
+=cut
+
+sub vim {
+    # Initialize the git submodules to pull down our Vim plugins.
+    print "Initializing git submodules...\n";
+    chdir($DOTFILES);
+    system("git submodule update --init");
+    chdir($HOME);
+    print "Submodules updated!\n\n";
+
+    # And re-run `dfm setup` to install the vim dotfiles.
+    setup();
+}
+
+=item C<dfm check-update>
+
+Check if the dotfiles haven't been updated in a while.
+
+This is intended to be called from your C<.bashrc> to notify that updates
+may be available, when the dotfiles were last updated greater than 15 days ago.
+
+If the last-update threshhold is greater than 15 days, it prints a message like:
+
+  It has been 15 days since you've updated your dotfiles (`dfm update`)
+
+Otherwise it doesn't print anything. Use C<--force> to force it to print.
+
+It only notifies about updates one time per day (by modifying the time stamp
+on the C<.last-updated> file).
+
+=cut
+
+sub checkUpdate {
+    my $time = updated();
+
+    my ($mtime) = (stat($UPDATE_FILE))[9];
+    my $delta = time() - $time;
+    my $days = int($delta / (60*60*24));
+
+    # Need to notify? If the last-updated time is >15 days and the file
+    # itself was last modified more than 24h ago.
+    my $notify = (time() - $time > $UPDATE_THRESHHOLD) && (time() - $mtime > 60*60*24);
+
+    if ($force || $notify) {
+        print "It has been $days days since you've updated your dotfiles (" .
+            "`dfm update`)\n";
+    }
+
+    system("touch", $UPDATE_FILE);
+    exit 0;
+}
+
+=item C<update>
+
+Update the dotfiles.
+
+This will go into the git repo and do a C<git pull> and re-link any new files.
+
+=cut
+
+sub update {
+    chdir($DOTFILES);
+    system("git stash; git pull; git stash pop");
+    setup();
+}
+
+=back
+
+=cut
+
+sub crawl {
+    my ($directory) = @_;
+
+    opendir(my $dh, $directory);
+    foreach my $file (readdir($dh)) {
+        next if $file =~ /^\.+$/; # Skip . and ..
+
+        # Get the absolute path to this file in the dotfiles repo and its
+        # destination relative to $HOME.
+        my $source = "$directory/$file";
+        my $target = $source;
+        $target =~ s{^$DOTFILES/home}{$HOME}g;
+        my $backup = $source;
+        $backup =~ s{^$DOTFILES/home}{$BACKUP}g;
+
+        # If the source is a directory, make sure it exists relative to $HOME.
+        if (-d $source) {
+            if (!-d $target) {
+                print "Create directory: $target\n";
+                mkdir($target) unless $noop;
+            }
+            if (!-d $backup) {
+                mkdir($backup) unless $noop;
+            }
+
+            # Recursively descend into the directory.
+            crawl($source);
+            next;
+        }
+
+        # Besides directories we only care about normal files.
+        next unless -f $source;
+
+        # Existing non-link targets should be backed up.
+        if (-f $target && !-l $target) {
+            print "Back up existing file to: $backup\n";
+            copy($target, $backup) unless $noop;
+            unlink($target) unless $noop;
+        }
+
+        # If in `copy` or `force` mode, delete any existing symlink.
+        if (-l $target && ($copy || $force)) {
+            my $link = readlink($target);
+            my $label = $copy ? "copy" : "force";
+            print "[--$label] Delete existing link (was $target -> $link)\n";
+            unlink($target) unless $noop;
+        }
+
+        # Already linked?
+        if (-l $target || ($copy && -f $target)) {
+            my $link = readlink($target);
+            if ($link ne $source) {
+                print "Removing old link; wrong target (was $target -> $link)\n";
+                unlink($target) unless $noop;
+            } else {
+                # Already linked!
+                next;
+            }
+        }
+
+        # Link it.
+        print "Link: $target\n";
+        if ($copy) {
+            copy($source, $target) unless $noop;
+        } else {
+            symlink($source, $target) unless $noop;
+        }
+
+        # Fix permissions.
+        if ($source =~ m{.ssh/config$}) {
+            print "Fix permissions: .ssh/config\n";
+            chmod 0600, $target unless $noop;
+        }
+    }
+}
+
+# Get or set the 'last updated' time.
+sub updated {
+    my ($setting) = @_;
+
+    if ($setting) {
+        open(my $fh, ">", $UPDATE_FILE);
+        print {$fh} Dumper({ time => $setting });
+        close($fh);
+        return $setting;
+    }
+
+    if (-f $UPDATE_FILE) {
+        my $data = do $UPDATE_FILE;
+        return $data->{time} || 0;
+    }
+
+    return 0;
+}
+
+main() unless caller;
+
+=head1 AUTHOR
+
+Noah Petherbridge, L<https://www.kirsle.net/>
+
+=cut
