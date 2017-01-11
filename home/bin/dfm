@@ -104,13 +104,18 @@ sub main {
 
     if ($command eq "setup") {
         setup();
-        system("dfm vim >/dev/null 2>&1 &");
+        if (fork() == 0) {
+            system("dfm vim >/dev/null 2>&1");
+            print "[`dfm vim` finished]\n";
+        }
     } elsif ($command eq "vim") {
         vim();
     } elsif ($command eq "check-update") {
         checkUpdate();
     } elsif ($command eq "update") {
         update();
+    } else {
+        die "Invalid command. See `dfm --help`.\n";
     }
 
     return;
