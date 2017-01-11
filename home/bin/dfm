@@ -267,6 +267,9 @@ sub crawl {
         # Existing non-link targets should be backed up.
         if (-f $target && !-l $target) {
             print "Back up existing file to: $backup\n";
+            if (!-d $BACKUP) {
+                mkdir($BACKUP) unless $noop;
+            }
             copy($target, $backup) unless $noop;
             unlink($target) unless $noop;
         }
