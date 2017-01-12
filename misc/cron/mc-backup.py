@@ -161,6 +161,7 @@ class Application:
 
         # Cull old backups.
         self.cull_backups()
+        quit()
 
     def cull_backups(self):
         """Trim the backup copies and remove older backups."""
