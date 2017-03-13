@@ -28,7 +28,7 @@ fi
 
 # Normalize the PATH
 CORE_PATH="/usr/sbin:/sbin:/usr/bin:/bin"
-USR_PATH="/usr/local/sbin:/usr/local/bin:${HOME}/bin:${HOME}/go/bin:${HOME}/go/.ext/bin:${HOME}/android/sdk/platform-tools"
+USR_PATH="/usr/local/sbin:/usr/local/bin:${HOME}/bin:${HOME}/go/bin:${HOME}/go/.ext/bin:${HOME}/.cargo/bin:${HOME}/android/sdk/platform-tools"
 if [[ `uname` == "Linux" ]] then export PATH="${CORE_PATH}:${USR_PATH}"
 else export PATH="${USR_PATH}:${CORE_PATH}"
 fi
