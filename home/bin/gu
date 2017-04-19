@@ -12,7 +12,7 @@ my $env = shift(@ARGV);
 my $email = '';
 
 if ($env =~ /^w/i) {
-	$email = 'npetherbridge@mediatemple.net';
+	$email = 'noah@with.in';
 }
 elsif ($env =~ /^h/i) {
 	$email = 'root@kirsle.net';
