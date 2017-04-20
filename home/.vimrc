@@ -1,5 +1,4 @@
 " vimrc, http://sh.kirsle.net/
-" Last Modified 2013/09/27
 
 " https://www.mail-archive.com/fish-users@lists.sourceforge.net/msg01425.html
 if $SHELL =~ 'bin/fish'
