@@ -18,6 +18,5 @@
 	status = auto
 	branch = auto
 
-# (mt) git-project
-[project]
-	defaultprojecttype = branch
+[push]
+	default = simple
