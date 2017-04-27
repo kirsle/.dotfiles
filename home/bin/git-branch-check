@@ -9,6 +9,8 @@
 # --Kirsle
 # https://www.kirsle.net/
 
+from __future__ import print_function
+
 import sys
 import subprocess
 
@@ -19,7 +21,9 @@ if len(sys.argv) >= 2:
 local_branch  = set()
 remote_branch = set()
 
-data = subprocess.check_output(["git", "branch", "-a"])
+subprocess.call(["git", "remote", "update", remote, "--prune"])
+
+data = subprocess.check_output(["git", "branch", "-a"]).decode()
 for line in data.split("\n"):
     # Remove the currently active branch indicator and extra spaces.
     line = line.strip("*").strip()
@@ -36,9 +40,9 @@ for line in data.split("\n"):
         local_branch.add(line)
 
 # Show comparisons.
-print "Local branches that are not on the remote:"
+print("Local branches that are not on the remote:")
 for branch in sorted(local_branch):
     if not branch in remote_branch:
-        print "*", branch
+        print("*", branch)
 
 # vim:expandtab
