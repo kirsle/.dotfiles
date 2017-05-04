@@ -9,6 +9,13 @@ dfm check-update
 ## Functions
 ################################################################################
 
+# Poor Man's ngrok. https://www.kirsle.net/blog/entry/poor-mans-ngrok
+tunup() {
+	port=${1:-5000}
+	echo "Forwarding kirsle.net:5000 to local port $port"
+	ssh -R $port:127.0.0.1:5000 kirsle
+}
+
 # Recursively traverse directory tree for git repositories, run git command
 # e.g.
 #  rgit status
