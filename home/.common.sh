@@ -13,7 +13,7 @@ dfm check-update
 tunup() {
 	port=${1:-5000}
 	echo "Forwarding kirsle.net:5000 to local port $port"
-	ssh -R $port:127.0.0.1:5000 kirsle
+	ssh -R 5000:127.0.0.1:$port kirsle
 }
 
 # Recursively traverse directory tree for git repositories, run git command
