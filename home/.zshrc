@@ -34,8 +34,9 @@ else export PATH="${USR_PATH}:${CORE_PATH}"
 fi
 export EDITOR="/usr/bin/vim"
 
-# Virtualenv
+# Virtualenv settings. Prefer Python3 for new environments.
 export WORKON_HOME=~/.virtualenvs
+command -v python3 >/dev/null 2>&1 && export VIRTUALENV_PYTHON=`command -v python3`
 
 # Go
 export GOPATH="$HOME/go/.ext:$HOME/go"

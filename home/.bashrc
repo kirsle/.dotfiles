@@ -35,8 +35,9 @@ if [ -f /opt/perl5/etc/bashrc ]; then
 	source /opt/perl5/etc/bashrc
 fi
 
-# Virtualenv
+# Virtualenv settings. Prefer Python 3 for new environments.
 export WORKON_HOME=~/.virtualenvs
+command -v python3 >/dev/null 2>&1 && export VIRTUALENV_PYTHON=`command -v python3`
 if [ -f /usr/bin/virtualenvwrapper.sh ]; then
 	source /usr/bin/virtualenvwrapper.sh
 elif [ -f /usr/share/virtualenvwrapper/virtualenvwrapper.sh ]; then
