@@ -49,3 +49,8 @@ rgit() {
 		echo
 	done
 }
+
+# Generate a random UUID4 string.
+uuid4() {
+	python -c "import uuid; print(str(uuid.uuid4()))"
+}
