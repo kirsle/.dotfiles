@@ -39,7 +39,7 @@ def main():
 
         # Write it to a temp file, sans shebang.
         temp = tempfile.NamedTemporaryFile(delete=False, suffix=".go")
-        temp.write(fh.read().strip())
+        temp.write(fh.read().strip().encode())
         temp.close()
 
         # Call it.

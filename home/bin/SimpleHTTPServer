@@ -1,4 +1,5 @@
-#!/usr/bin/env gosh
+///bin/true && exec /usr/bin/env gosh "$0" "$@"
+// vim:set ft=go:
 package main
 
 // SimpleHTTPServer is a simple Go static file server, similar to the Python
