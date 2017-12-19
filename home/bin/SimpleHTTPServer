@@ -1,4 +1,4 @@
-///bin/true && exec /usr/bin/env gosh "$0" "$@"
+///bin/true && exec /usr/bin/env script.go "$0" "$@"
 // vim:set ft=go:
 package main
 
