@@ -50,6 +50,14 @@ rgit() {
 	done
 }
 
+# Push and pull my KeePass DB from remote storage.
+pw-push() {
+	rsync -av ~/.config/pwdb/kirsle.kdbx kirsle:/mnt/volume/pwdb/
+}
+pw-pull() {
+	rsync -av kirsle:/mnt/volume/pwdb/kirsle.kdbx ~/.config/pwdb/
+}
+
 # Generate a random UUID4 string.
 uuid4() {
 	python -c "import uuid; print(str(uuid.uuid4()))"
