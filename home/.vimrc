@@ -94,9 +94,7 @@ if &term == "screen" || &term == "xterm" || &term == "xterm-256color"
 endif
 
 " custom file extensions
-au BufNewFile,BufRead *.panel set filetype=html
-au BufNewFile,BufRead *.tt set filetype=html
-au BufNewFile,BufRead *.tp set filetype=html
+au BufNewFile,BufRead *.gohtml set filetype=html
 
 " Tab Navigation
 nnoremap [t :tabprevious<CR>
