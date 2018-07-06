@@ -16,7 +16,7 @@ setopt hist_ignore_space
 setopt inc_append_history
 setopt nobeep
 
-# 256 colors
+# Enable 256 colors in my terminal
 [[ "$TERM" == "xterm" ]] && export TERM=xterm-256color
 
 # CLI colors under OS X for `ls`
@@ -26,22 +26,32 @@ if [[ `uname` == "Darwin" ]]; then
 	export LSCOLORS="ExGxcxdxcxegedabagecec"
 fi
 
-# Normalize the PATH
+# Normalize the PATH. Under Linux prefer /usr/bin over local paths,
+# but on MacOS allow /usr/local and ~/bin to override system paths,
+# for Homebrew.
 CORE_PATH="/usr/sbin:/sbin:/usr/bin:/bin"
 USR_PATH="/usr/local/sbin:/usr/local/bin:${HOME}/bin:${HOME}/go/bin:${HOME}/go/.ext/bin:${HOME}/.cargo/bin:${HOME}/android/sdk/platform-tools"
 if [[ `uname` == "Linux" ]] then export PATH="${CORE_PATH}:${USR_PATH}"
 else export PATH="${USR_PATH}:${CORE_PATH}"
 fi
+
+# Vim as the favorite editor.
 export EDITOR="/usr/bin/vim"
 
-# Virtualenv settings. Prefer Python3 for new environments.
+# Python settings.
+## Prefer Python3 for new environments created by virtualenvwrapper.
 export WORKON_HOME=~/.virtualenvs
 command -v python3 >/dev/null 2>&1 && export VIRTUALENV_PYTHON=`command -v python3`
 
-# Go
+# Go settings.
+## Separate the GOPATH into external (.ext) and main, to keep my projects
+## apart from everyone else's. `go get` installs into the first directory
+## of $GOPATH so third party packages end up there.
 export GOPATH="$HOME/go/.ext:$HOME/go"
 
-# Node/npm
+# JavaScript settings.
+## Store globally installed npm packages (e.g. `npm install -g babel-cli`)
+## in my ~/.npm-global-pkg directory, and add it to my $PATH.
 if [[ ! -f "${HOME}/.npmrc" ]]; then
 	echo "prefix = ${HOME}/.npm-global-pkg" > $HOME/.npmrc
 fi
@@ -49,7 +59,8 @@ export NPM_PACKAGES="${HOME}/.npm-global-pkg"
 export NODE_PATH="${NPM_PACKAGES}/lib/node_modules:${NODE_PATH}"
 export PATH="${NPM_PACKAGES}/bin:$PATH"
 
-# Java
+# Java settings.
+## Make ~/java available on the CLASSPATH.
 export CLASSPATH="$CLASSPATH:${HOME}/java"
 
 # Reload zshrc
@@ -170,6 +181,10 @@ export ZSH_THEME_VIRTUALENV_SUFFIX=")"
 local virtualenv_prompt='%{$orange%}$(virtualenv_prompt_info)%{$reset_color%}'
 local base_prompt="${virtualenv_prompt}${base_prompt}"
 
+# Trigger any virtualenvs to auto-activate in the current working directory,
+# in case we just opened a new terminal inside a project.
+command -v workon_cwd >/dev/null && workon_cwd
+
 ###
 # Configure plugin: zsh-syntax-highlighting
 ###
@@ -199,3 +214,4 @@ export PROMPT=$base_prompt
 ###
 
 . ~/.common.sh
+
