@@ -1,7 +1,7 @@
 # .bashrc
 
 # Kirsle's Global BashRC
-# Updated     2015-05-07
+# Updated     2018-09-05
 
 # Source global definitions
 if [ -f /etc/bashrc ]; then
@@ -37,6 +37,7 @@ fi
 
 # Virtualenv settings. Prefer Python 3 for new environments.
 export WORKON_HOME=~/.virtualenvs
+unset VIRTUAL_ENV_DISABLE_PROMPT
 command -v python3 >/dev/null 2>&1 && export VIRTUALENV_PYTHON=`command -v python3`
 if [ -f /usr/bin/virtualenvwrapper.sh ]; then
 	source /usr/bin/virtualenvwrapper.sh
@@ -56,20 +57,22 @@ MAROON='\e[0;31m'
 PURPLE='\e[0;35m'
 BROWN='\e[0;33m'
 SILVER='\e[0;37m'
-GRAY='\e[1;30m'
-BLUE='\e[1;34m'
-LIME='\e[1;32m'
-CYAN='\e[1;36m'
-RED='\e[1;31m'
-MAGENTA='\e[1;35m'
-YELLOW='\e[1;33m'
-WHITE='\e[1;37m'
+GRAY='\e[30m'
+BLUE='\e[34m'
+BRIGHTGREEN='\e[32m'
+BRIGHTTEAL='\e[36m'
+RED='\e[31m'
+MAGENTA='\e[35m'
+YELLOW='\e[33m'
+WHITE='\e[37m'
 BOLD='\e[1m'
 NC='\e[0m'              # No Color
 
 # Some 256-colors colors
 LBLUE="\e[38;5;39m"
 PINK="\e[38;5;213m"
+LIME="\e[38;5;10m"
+CYAN="\e[38;5;14m"
 
 function showcolors() {
 	echo -e "$BLACK BLACK $NAVY NAVY $GREEN GREEN $TEAL TEAL"
@@ -96,7 +99,7 @@ git_branch() {
 	fi
 }
 if [ "$ENLIGHTENED" = '1' ]; then
-	export PS1="\[$BOLD$LBLUE\][\[$PINK\]\u\[$LBLUE\]@\[$PINK\]\h \[$LIME\]\W\[$CYAN\]\$(git_branch)\[$LBLUE\]\[$LBLUE\]]\\$ \[$NC\]"
+	export PS1="\[$LBLUE\][\[$PINK\]\u\[$LBLUE\]@\[$PINK\]\h \[$LIME\]\W\[$CYAN\]\$(git_branch)\[$LBLUE\]\[$LBLUE\]]\\$ \[$NC\]"
 fi
 
 # For non-Fedora environments be sure the PROMPT_COMMAND sets the title bar.
