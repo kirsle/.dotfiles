@@ -1,9 +1,0 @@
-#!/usr/bin/perl
-
-# Get some updated software on Debian Lenny, especially `git`.
-
-if (!-d "/opt/git") {
-	print "Fetching latest git\n";
-	system(qw(wget --no-check-certificate https://rpm.kirsle.net/static-bin/git/lenny/latest.tar.gz -O git-lenny.tar.gz));
-	system(qw(sudo tar -xzvf git-lenny.tar.gz -C /));
-}
