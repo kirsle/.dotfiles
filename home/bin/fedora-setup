@@ -135,6 +135,8 @@ class Application(object):
                 "atril",     # evince (Document Viewer)
                 "engrampa",  # file-roller (Archive Manager)
                 "eom",       # eog (Picture Viewer)
+                "tumbler",   # thumbnailer for Thunar file browser
+                "ffmpegthumbnailer",  # video thumbnail support
             )
 
         # Development stuff.
