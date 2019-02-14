@@ -1,0 +1,128 @@
+#!/usr/bin/env python3
+
+"""video2gif: convert a video into a GIF image using ffmpeg.
+
+Usage: video2gif input_video.mp4
+       # produces video2gif.gif output of the first 5 seconds from the video
+
+Command line options and their defaults:
+
+    --time, -t = 00:00:00
+        The time offset to seek into the video before starting the GIF,
+        default is "00:00:00", this value can be an integer number of seconds too
+        like "190"
+
+    --length, -l = 5
+        The number of seconds to convert into a GIF, default is 5, usually 10
+        or fewer is a good length for a GIF.
+
+    --width, -w = 480
+        The max width for the output GIF to be scaled down to. 480 is a good
+        default, smaller or bigger and you'll trade off file size for resolution.
+
+    --fps = 10
+        Set the FPS setting in ffmpeg for the GIF, 10 is a good default.
+
+    --output, -o = video2gif.gif
+        Name a different output file for the GIF image.
+
+--Kirsle
+https://www.kirsle.net/
+"""
+
+import argparse
+import sys
+import os
+import os.path
+import subprocess
+import tempfile
+
+# Test for required programs.
+if subprocess.call("which ffmpeg >/dev/null 2>&1", shell=True) != 0:
+    print("You require ffmpeg to use this script, install the ffmpeg package and try again")
+    sys.exit(1)
+
+def main():
+    # Command line options for this script. Run `video2gif --help` for automatic
+    # documentation.
+    parser = argparse.ArgumentParser(description="video2gif: convert a video into a GIF image")
+    parser.add_argument("--time", "-t",
+        help="Time skip in the video, in 00:00:00 format or as an integer number of seconds, default is 0.",
+        type=str,
+        default="00:00:00",
+    )
+    parser.add_argument("--length", "-l",
+        help="Number of seconds of video to go into the GIF, beginning at the --time option."
+            "Usually use a value <= 10 seconds. Default is 5.",
+        type=str,
+        default="5",
+    )
+    parser.add_argument("--fps",
+        help="Set a custom FPS value for the output GIF, default is 10",
+        type=str,
+        default="10",
+    )
+    parser.add_argument("--width", "-w",
+        help="Set a target width for the output GIF image, default is 480",
+        type=str,
+        default="480",
+    )
+    parser.add_argument("--output", "-o",
+        help="Output file name, default is video2gif.gif",
+        type=str,
+        default="video2gif.gif",
+    )
+    parser.add_argument("input",
+        help="Input file, a video to convert into a GIF",
+    )
+
+    # Parse the command line arguments.
+    args = parser.parse_args()
+
+    # We need a temporary file to hold the video palette.
+    palette_fh = tempfile.NamedTemporaryFile(
+        suffix=".png",
+        delete=False,
+    )
+    palette_file = palette_fh.name  # file path like "/tmp/tmpabccdd.png"
+    palette_fh.close()  # we're not the ones writing to it so close the file
+
+    print("Temporary palette file is:", palette_file)
+
+    # 1. create the palette from the original video file
+    subprocess.call([
+        "ffmpeg",
+        "-y",  # yes, force overwrite the named temporary file
+        "-ss", args.time,
+        "-t", args.length,
+        "-i", args.input,
+        "-vf", "fps={fps},scale={width}:-1:flags=lanczos,palettegen".format(
+            fps=args.fps,
+            width=args.width,
+        ),
+        palette_file,
+    ])
+
+    # 2. create the GIF from the original video file and the temp palette.
+    subprocess.call([
+        "ffmpeg",
+        "-ss", args.time,
+        "-t", args.length,
+        "-i", args.input,
+        "-i", palette_file,
+        "-filter_complex", "fps={fps},scale={width}:-1:flags=lanczos[x];[x][1:v]paletteuse".format(
+            fps=args.fps,
+            width=args.width,
+        ),
+        args.output,
+    ])
+
+    # clean up the temporary palette file
+    os.unlink(palette_file)
+
+# the following condition is only true when this python script is being run
+# as a script directly (not when imported as a module in another program)
+if __name__ == "__main__":
+    main()
+
+# vim:expandtab
