@@ -1,0 +1,63 @@
+#!/usr/bin/env python
+
+# nextcloud-dav: mount or unmount my Nextcloud DAV drive.
+# Usage: nextcloud-dav [mount|umount]
+
+import os
+import sys
+import subprocess
+
+####
+# Config Section
+####
+
+# Mount path
+MOUNT_POINT = "{home}/davfs".format(home=os.environ["HOME"])
+
+# How to verify the path is already mounted? (Check a file inside)
+VERIFY_MOUNTED = lambda: os.path.isdir(os.path.join(MOUNT_POINT, "Photos"))
+
+# Dav URL
+WEBDAV_URL = "https://cloud.ckir.net/remote.php/webdav/"
+
+####
+# End Config Section
+####
+
+if not os.path.isdir(MOUNT_POINT):
+    print("Create mount folder: {}".format(MOUNT_POINT))
+    os.mkdir(MOUNT_POINT)
+
+operation = None
+if len(sys.argv) > 1:
+    operation = sys.argv[1]
+    if operation.startswith("m"):
+        operation = "mount"
+    elif operation.startswith("u"):
+        operation = "umount"
+    else:
+        print("CLI argument must be 'mount' or 'umount' or 'm' or 'u'")
+        sys.exit(1)
+
+is_mounted = VERIFY_MOUNTED()
+
+if operation is None:
+    # Auto-detect.
+    if is_mounted:
+        operation = "umount"
+    else:
+        operation = "mount"
+
+# Run the command.
+if operation == "mount":
+    if is_mounted:
+        print("davfs is already mounted at {}".format(MOUNT_POINT))
+        sys.exit(1)
+    print("Mounting {} to {}".format(WEBDAV_URL, MOUNT_POINT))
+    subprocess.call(["sudo", "mount.davfs", WEBDAV_URL, MOUNT_POINT])
+else:
+    if not is_mounted:
+        print("davfs is not mounted")
+        sys.exit(1)
+    print("Unmounting davfs")
+    subprocess.call(["sudo", "fusermount", "-u", "davfs"])
