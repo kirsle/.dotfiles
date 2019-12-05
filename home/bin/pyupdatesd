@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 """
 pyupdatesd: A simple yum update checker.
@@ -73,18 +73,18 @@ try:
         'display='
     ])
 except:
-    print "Unrecognized options given, try " + sys.argv[0] + " --help"
+    print("Unrecognized options given, try " + sys.argv[0] + " --help")
     exit(1)
 
 debug   = False
 testing = False
 def say(*message):
     if debug:
-        print ' '.join(map(lambda x: str(x), message))
+        print(' '.join(map(lambda x: str(x), message)))
 
 def usage():
-    print "Usage: " + sys.argv[0] + " [--display :0.0 --help --debug --testing]"
-    print "Use --testing to force the script to show the notification icon."
+    print("Usage: " + sys.argv[0] + " [--display :0.0 --help --debug --testing]")
+    print("Use --testing to force the script to show the notification icon.")
     exit(1)
 
 # Parse the options
