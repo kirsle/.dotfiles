@@ -125,7 +125,6 @@ class Application(object):
             "thunderbird",
             "gimp",
             "libreoffice",
-            "banshee",
         )
 
         # Ones that I mainly want on the Xfce desktop (MATE apps)
@@ -146,8 +145,6 @@ class Application(object):
             "golang",
             "nodejs",
             "npm",
-            "pyflakes",
-            "python2-virtualenvwrapper",
             "zsh",
         )
 

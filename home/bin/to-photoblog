@@ -1,0 +1,86 @@
+#!/usr/bin/env python
+
+"""Helper script to upload pics to my photoblog."""
+
+import argparse
+import os.path
+import re
+import subprocess
+from urllib.request import Request, urlopen
+from base64 import b64decode
+
+HOSTNAME = b64decode(b'aW50cm92ZXJ0bnVkaXN0LmNvbQ==').decode()
+USERNAME = b64decode(b'Ym9pY3VkaQ==').decode()
+RE_FILENAME = re.compile(r'^(\d{2}\w{2}\d{3})[^\d]?.*?\.(gif|jpg|png)$')
+
+def main(args):
+    # Map original files to short basenames.
+    file_map = dict()
+    for name in args.files:
+        basename = os.path.basename(name)
+        if args.custom:
+            file_map[name] = basename
+            continue
+
+        m = RE_FILENAME.match(name)
+        if not m:
+            print(f"File '{name}' doesn't match usual naming convention. Use --custom to upload custom file names.")
+            quit()
+        
+        file_map[name] = f"{m.group(1)}.{m.group(2)}"
+    
+    print(f"Going to photoblog: {list(file_map.values())}")
+
+    # Test each file doesn't already exist.
+    if not args.lazy:
+        print(f"Checking each file isn't already uploaded...")
+        problems = False
+        for name in file_map.values():
+            test_url = f'https://{HOSTNAME}/static/photos/{name}'
+            req = Request(test_url, method='HEAD')
+
+            try:
+                resp = urlopen(req, timeout=10)
+                status = resp.status if hasattr(resp, 'status') else resp.getstatus()
+                if status == 200:
+                    print(f"Warning: file '{name}' already existed at '{test_url}' and won't be uploaded without --lazy")
+                    problems = True
+            except:
+                pass
+        
+        if problems:
+            quit()
+    
+    print("Looks good! Sending to server...")
+    if args.test:
+        print("NOTE: Test run (--test), not actually uploading")
+
+    for ours, theirs in file_map.items():
+        cmd = ["scp", ours, f"{USERNAME}@{HOSTNAME}:www/static/photos/{theirs}"]
+        print("Exec:", " ".join(cmd))
+        if not args.test:
+            subprocess.run(cmd)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser("to-photoblog")
+    parser.add_argument("--custom", "-c",
+        action="store_true",
+        help="Upload files with custom names as-is without validation",
+    )
+    parser.add_argument("--lazy", "-l",
+        action="store_true",
+        help="Don't validate the image was already uploaded, just upload it",
+    )
+    parser.add_argument("--test", "-t",
+        action="store_true",
+        help="Test run; do not actually upload files",
+    )
+    parser.add_argument("files",
+        type=str,
+        nargs='+',
+        help='Files to upload, should be in my naming convention',
+    )
+
+    args = parser.parse_args()
+    main(args)
