@@ -25,7 +25,7 @@ def main(args):
         m = RE_FILENAME.match(name)
         if not m:
             print(f"File '{name}' doesn't match usual naming convention. Use --custom to upload custom file names.")
-            quit()
+            continue
 
         file_map[name] = f"{m.group(1)}.{m.group(2)}"
 
@@ -52,6 +52,23 @@ def main(args):
 
         print(f"New files not found on the blog: {not_existing}")
 
+        # Doing a copy-to?
+        if args.copy_to:
+            if os.path.isfile(args.copy_to) and not os.path.isdir(args.copy_to):
+                print(f"Error: {args.copy_to} already exists and is not a folder")
+                quit()
+
+            if not os.path.isdir(args.copy_to):
+                os.makedirs(args.copy_to)
+
+            for ours, theirs in file_map.items():
+                if not theirs in not_existing:
+                    continue
+                cmd = ["cp", ours, f"{args.copy_to}/{theirs}"]
+                print("Exec:", " ".join(cmd))
+                subprocess.run(cmd)
+            quit()
+
         if problems:
             quit()
 
@@ -60,6 +77,8 @@ def main(args):
         print("NOTE: Test run (--test), not actually uploading")
 
     for ours, theirs in file_map.items():
+        if not theirs in not_existing:
+            continue
         cmd = ["scp", ours, f"{USERNAME}@{HOSTNAME}:www/static/photos/{theirs}"]
         print("Exec:", " ".join(cmd))
         if not args.test:
@@ -79,6 +98,10 @@ if __name__ == "__main__":
     parser.add_argument("--test", "-t",
         action="store_true",
         help="Test run; do not actually upload files",
+    )
+    parser.add_argument("--copy-to", "-cp",
+        type=str,
+        help="Instead of scp upload, copy the files to another folder on disk",
     )
     parser.add_argument("files",
         type=str,

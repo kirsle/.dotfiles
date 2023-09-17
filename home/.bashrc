@@ -212,3 +212,4 @@ fi
 ###
 
 . ~/.common.sh
+. "$HOME/.cargo/env"
