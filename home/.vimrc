@@ -183,7 +183,6 @@ Plugin 'kien/ctrlp.vim'
 " Languages
 Plugin 'kchmck/vim-coffee-script'
 Plugin 'tpope/vim-markdown'
-Plugin 'editorconfig/editorconfig-vim'
 
 call vundle#end()         " required
 filetype plugin indent on " required

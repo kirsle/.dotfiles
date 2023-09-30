@@ -112,13 +112,6 @@ class Application(object):
                 os.unlink("/tmp/msttcore-fonts.rpm")
         self.install("gdouros-symbola-fonts")
 
-        # Themes
-        self.install("bluecurve-cursor-theme")
-        if self.plymouth and not self.test("rpm -q plymouth-theme-solar"):
-            self.install("plymouth-theme-solar")
-            self.commit()
-            self.shell("sudo plymouth-set-default-theme solar && sudo dracut -f")
-
         # My favorite desktop apps.
         self.install(
             "firefox",
